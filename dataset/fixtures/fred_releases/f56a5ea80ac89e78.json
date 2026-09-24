@@ -1,0 +1,9 @@
+{
+  "fixture_id": "f56a5ea80ac89e78",
+  "tool": "fred_releases",
+  "args": {
+    "window": "next_week"
+  },
+  "result": "# Macro Releases: 2026-04-13 to 2026-04-17\n\n| Date | Time (ET) | Release | Tier |\n|------|-----------|---------|------|\n| 2026-04-14 | 8:30 AM | Producer Price Index | Tier 1 |\n| 2026-04-16 | 9:15 AM | G.17 Industrial Production and Capacity Utilization | Tier 2 |\n| 2026-04-16 | 10:00 AM | Manufacturer's Shipments, Inventories, and Orders | Tier 2 |",
+  "recorded_at": "2026-09-17T21:09:55.433017Z"
+}

@@ -1,0 +1,9 @@
+{
+  "fixture_id": "b83902c9ad85ec84",
+  "tool": "fred_releases",
+  "args": {
+    "window": "this_week"
+  },
+  "result": "# Macro Releases: 2026-04-06 to 2026-04-10\n\n| Date | Time (ET) | Release | Tier |\n|------|-----------|---------|------|\n| 2026-04-06 | 4:30 PM | H.4.1 Factors Affecting Reserve Balances | Tier 3 |\n| 2026-04-07 | 3:00 PM | G.19 Consumer Credit | Tier 3 |\n| 2026-04-09 | 8:30 AM | Gross Domestic Product | Tier 1 |\n| 2026-04-09 | 8:30 AM | Personal Income and Outlays | Tier 1 |\n| 2026-04-09 | 10:00 AM | Manufacturer's Shipments, Inventories, and Orders | Tier 2 |\n| 2026-04-10 | 8:30 AM | Consumer Price Index | Tier 1 |",
+  "recorded_at": "2026-09-17T21:09:43.860721Z"
+}

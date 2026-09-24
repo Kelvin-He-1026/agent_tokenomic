@@ -1,0 +1,28 @@
+# NOTE: comments must be on their own line. Git does not support trailing
+# comments: "model/  # note" would be read as a filename and ignore nothing.
+
+# Environment
+.venv/
+__pycache__/
+*.pyc
+
+# Secrets: never commit. Keys are loaded from here by agent/env.py.
+.env
+
+# Model weights, ~280 GB. Fetch with scripts/fetch_models.py;
+# exact upstream commits are recorded in model/MANIFEST.json.
+model/
+
+# Chroma index. Rebuild with scripts/build_index.py.
+db/
+
+# Third-party papers. Not redistributed; see README for sources.
+documents/
+
+# Generated results. Runs are machine-specific and include superseded data;
+# publish curated results deliberately rather than committing everything.
+output/
+
+# Scratch
+*.bak
+*.log

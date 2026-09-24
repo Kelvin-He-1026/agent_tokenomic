@@ -1,0 +1,50 @@
+# Phase 1 pilot cell: Qwen3.8-27B, BF16, TP=1, single GPU.
+# 15 tasks x 3 repeats x 3 frameworks = 135 runs.
+framework: langgraph
+as_of_date: "2026-04-06"
+base_url: "http://127.0.0.1:8100/v1"
+api_key: "EMPTY"
+tool_mode: replay
+fixtures_dir: dataset/fixtures
+retrieval_top_k: 5
+models_dir: model
+embedding_model: BAAI/bge-large-en-v1.5
+embedding_local_dir: bge-large-en-v1.5
+chroma_dir: db/chroma
+embedding_device: cpu
+chroma_collection: documents
+model:
+  repo: Qwen/Qwen3.8-27B          # upstream id, provenance only
+  local_dir: Qwen3.8-27B          # weights load from model/Qwen3.8-27B
+  revision: main
+  served_name: Qwen/Qwen3.8-27B   # what vLLM answers to, and what telemetry records
+  precision: bf16
+  tp_size: 1
+  max_model_len: 32768
+  gpu_memory_utilization: 0.90
+  tool_call_parser: "qwen3_xml"   # XML function format, confirmed from chat template
+  reasoning_parser: "qwen3"       # splits reasoning out of content; needed to count thinking tokens
+
+  # --- Thinking mode: set it HERE, nowhere else. ---------------------------
+  # The server is launched from these (serve_vllm.sh --config), and preflight
+  # refuses to run if the live server does not match. Changing them means
+  # restarting vLLM. Each combination is its own cell with its own config_id.
+  #
+  #   thinking_setting: "off"   -> reasoning_effort must be ""
+  #   thinking_setting: "on"    -> reasoning_effort required: "low" | "medium" | "xhigh"
+  #
+  # Qwen3.8's own default is on + xhigh; it is never inherited.
+  thinking_setting: "off"
+  reasoning_effort: ""
+sampling:
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 1024
+  seed: 1234
+  stream: true
+limits:
+  max_llm_calls: 10
+  request_timeout_s: 120
+  task_timeout_s: 600
+  client_retries: 0
+  parallel_tool_calls: false

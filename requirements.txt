@@ -1,0 +1,36 @@
+# harness core
+pyyaml>=6.0
+httpx>=0.27
+fastapi>=0.110
+uvicorn>=0.29
+pydantic>=2.6
+
+# frameworks under test (pin exactly before the pilot; versions are a result)
+langgraph
+langchain-openai
+langchain-core
+crewai
+openai-agents
+
+# tools
+requests
+tavily-python
+langchain-chroma
+langchain-huggingface
+
+# evaluation
+deepeval
+
+# analysis
+pandas
+pyarrow
+statsmodels
+
+# CUDA JIT toolchain, pinned as one version. vLLM JIT-compiles Mamba and
+# FlashInfer MoE kernels at startup, and a mixed toolchain fails there: nvvm
+# 13.4 emits PTX 9.4 that ptxas 13.0 rejects. All three must match the CUDA
+# 13.0 build of torch. (scripts/serve_vllm.sh points CUDA_HOME at these wheels.)
+nvidia-cuda-nvcc==13.0.88
+nvidia-nvvm==13.0.88
+nvidia-cuda-crt==13.0.88
+ninja

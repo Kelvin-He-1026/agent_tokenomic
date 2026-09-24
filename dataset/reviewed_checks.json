@@ -1,0 +1,640 @@
+{
+  "_about": "Reviewed answer checks, applied by agent/dataset/build_tasks.py on top of the source tasks. Each key fact is a string or a list of alternatives (any one counts). Facts are taken from the reference answer, never from the question: a fact the question already contains is satisfied by any answer and proves nothing. Reviewed by Claude against the reference answers, the corpus and the recorded FRED fixtures; not yet human-verified (human_verified=false).",
+  "_review": {
+    "by": "claude",
+    "date": "2026-09-18",
+    "human_verified": false,
+    "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+  },
+  "agentic_rag_gt-001": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 4,
+        "key_facts": [
+          "brevity bias",
+          "context collapse",
+          [
+            "reflect"
+          ],
+          [
+            "curat"
+          ]
+        ]
+      }
+    },
+    "notes": "Both failure modes plus the generation/reflection/curation roles."
+  },
+  "agentic_rag_gt-002": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 4,
+        "key_facts": [
+          [
+            "weight"
+          ],
+          "reflexion",
+          "textgrad",
+          "gepa",
+          "dynamic cheatsheet"
+        ]
+      }
+    },
+    "notes": "Definition (inputs rather than weights) plus at least 3 of the 4 cited methods."
+  },
+  "agentic_rag_gt-003": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 4,
+        "key_facts": [
+          "attention",
+          [
+            "recurren",
+            "convolution"
+          ],
+          "parallel",
+          "28.4",
+          "41.8"
+        ]
+      }
+    }
+  },
+  "agentic_rag_gt-004": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 2,
+        "key_facts": [
+          "constant",
+          "resolution",
+          [
+            "averag"
+          ]
+        ]
+      }
+    },
+    "notes": "Constant number of operations; reduced effective resolution from averaging."
+  },
+  "agentic_rag_gt-005": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 2,
+        "key_facts": [
+          [
+            "when to retrieve",
+            "when retrieval",
+            "when to trigger",
+            "timing of retrieval",
+            "decide when"
+          ],
+          [
+            "what to retrieve",
+            "what information to retrieve",
+            "what content",
+            "what to fetch",
+            "decide what",
+            "what to query"
+          ],
+          [
+            "initial input",
+            "initial query",
+            "initial prompt",
+            "original input",
+            "original query"
+          ]
+        ]
+      }
+    }
+  },
+  "agentic_rag_gt-006": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 2,
+        "key_facts": [
+          [
+            "static rule",
+            "static",
+            "fixed rule",
+            "predefined rule",
+            "heuristic"
+          ],
+          [
+            "recent sentence",
+            "last sentence",
+            "last few tokens",
+            "last tokens",
+            "most recent",
+            "preceding sentence"
+          ],
+          [
+            "information need"
+          ]
+        ]
+      }
+    }
+  },
+  "agentic_rag_gt-007": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 3,
+        "key_facts": [
+          [
+            "crowdsourc",
+            "crowd sourc",
+            "crowd worker",
+            "mechanical turk",
+            "mturk"
+          ],
+          "wikipedia",
+          "supporting fact",
+          "comparison"
+        ]
+      }
+    }
+  },
+  "agentic_rag_gt-008": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 3,
+        "key_facts": [
+          "bridge",
+          [
+            "multiple properties",
+            "several properties",
+            "properties simultaneously",
+            "multiple constraints",
+            "intersection"
+          ],
+          [
+            "arithmetic",
+            "numerical",
+            "numeric",
+            "counting"
+          ],
+          [
+            "both entities",
+            "two entities",
+            "each entity",
+            "both of the entities"
+          ]
+        ]
+      }
+    }
+  },
+  "agentic_rag_gt-009": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 4,
+        "key_facts": [
+          "cad",
+          "formula",
+          "sensor",
+          "image",
+          "table",
+          "video"
+        ]
+      }
+    },
+    "notes": "At least 4 of the 6 data types the paper lists."
+  },
+  "agentic_rag_gt-010": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 3,
+        "key_facts": [
+          [
+            "descriptive text",
+            "text description",
+            "textual description",
+            "caption",
+            "convert image",
+            "converting image",
+            "image to text",
+            "into text"
+          ],
+          [
+            "shared embedding",
+            "joint embedding",
+            "common embedding",
+            "same embedding",
+            "embedding space"
+          ],
+          "clip",
+          [
+            "schematic",
+            "diagram"
+          ]
+        ]
+      }
+    }
+  },
+  "agentic_rag_gt-011": {
+    "reference_answer": "Per the recorded FRED calendar for 2026-04-06 to 2026-04-10, the Tier 1 releases are Gross Domestic Product and Personal Income and Outlays (2026-04-09, 8:30 AM) and the Consumer Price Index (2026-04-10, 8:30 AM). Also scheduled: H.4.1 Factors Affecting Reserve Balances (04-06), G.19 Consumer Credit (04-07), and Manufacturer's Shipments, Inventories, and Orders (04-09).",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 3,
+        "key_facts": [
+          [
+            "gross domestic product",
+            "gdp"
+          ],
+          [
+            "consumer price index",
+            "cpi"
+          ],
+          "personal income"
+        ]
+      }
+    },
+    "notes": "Rebuilt from our FRED fixture. The reference repo's answer came from a different FRED snapshot and watchlist and would mark correct answers wrong."
+  },
+  "agentic_rag_gt-012": {
+    "reference_answer": "Per the recorded FRED calendar for 2026-04-13 to 2026-04-17: the Producer Price Index (2026-04-14, 8:30 AM), G.17 Industrial Production and Capacity Utilization (2026-04-16, 9:15 AM), and Manufacturer's Shipments, Inventories, and Orders (2026-04-16, 10:00 AM).",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 3,
+        "key_facts": [
+          [
+            "producer price index",
+            "ppi"
+          ],
+          [
+            "industrial production",
+            "g.17"
+          ],
+          "manufacturer"
+        ]
+      }
+    },
+    "notes": "Rebuilt from our FRED fixture."
+  },
+  "agentic_rag_gt-013": {
+    "reference_answer": "Yes. As of 2026-04-06, the remaining Tier 1 releases are Gross Domestic Product and Personal Income and Outlays (2026-04-09, 8:30 AM) and the Consumer Price Index (2026-04-10, 8:30 AM).",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 3,
+        "key_facts": [
+          [
+            "gross domestic product",
+            "gdp"
+          ],
+          [
+            "consumer price index",
+            "cpi"
+          ],
+          "personal income"
+        ]
+      }
+    },
+    "notes": "Rebuilt from our FRED fixture."
+  },
+  "agentic_rag_gt-014": {
+    "reference_answer": "Next week the calendar lists G.17 Industrial Production and Capacity Utilization (2026-04-16), a Federal Reserve release. No employment reports are scheduled; the other releases are the Producer Price Index and Manufacturer's Shipments, Inventories, and Orders.",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 1,
+        "key_facts": [
+          [
+            "g.17",
+            "industrial production"
+          ]
+        ]
+      }
+    },
+    "notes": "Rebuilt from our FRED fixture. The only Fed release next week is G.17; there are no employment reports. A low bar deliberately: whether the answer invents an FOMC or jobs report is a faithfulness question for the LLM judge."
+  },
+  "agentic_rag_gt-015": {
+    "reference_answer": "This week: Gross Domestic Product and Personal Income and Outlays (which includes PCE inflation) on 2026-04-09 at 8:30 AM, and the Consumer Price Index on 2026-04-10 at 8:30 AM.",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 2,
+        "key_facts": [
+          [
+            "gross domestic product",
+            "gdp"
+          ],
+          [
+            "consumer price index",
+            "cpi"
+          ]
+        ],
+        "allow_question_terms": true
+      }
+    },
+    "notes": "Rebuilt from our FRED fixture. 'GDP' appears in the question, so the full name is the fact; the check still accepts 'gdp' because the answer must name the release to be useful."
+  },
+  "agentic_rag_gt-016": {
+    "answer_check": {
+      "mode": "judge_only",
+      "params": {
+        "reason": "time-sensitive: the correct answer depends on the date of the web fixture"
+      }
+    }
+  },
+  "agentic_rag_gt-017": {
+    "answer_check": {
+      "mode": "judge_only",
+      "params": {
+        "reason": "time-sensitive: the correct answer depends on the date of the web fixture"
+      }
+    }
+  },
+  "agentic_rag_gt-018": {
+    "answer_check": {
+      "mode": "judge_only",
+      "params": {
+        "reason": "open-ended and time-sensitive; judged for faithfulness to the fixture"
+      }
+    }
+  },
+  "agentic_rag_gt-019": {
+    "answer_check": {
+      "mode": "judge_only",
+      "params": {
+        "reason": "time-sensitive: the correct answer depends on the date of the web fixture"
+      }
+    }
+  },
+  "agentic_rag_gt-020": {
+    "answer_check": {
+      "mode": "judge_only",
+      "params": {
+        "reason": "time-sensitive: the correct answer depends on the date of the web fixture"
+      }
+    }
+  },
+  "authored-notool-001": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 3,
+        "key_facts": [
+          "retrieval",
+          [
+            "augment"
+          ],
+          "generation"
+        ]
+      }
+    }
+  },
+  "authored-notool-002": {
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 2250,
+        "tolerance": 0
+      }
+    }
+  },
+  "authored-notool-003": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 1,
+        "key_facts": [
+          [
+            "slow",
+            "delay",
+            "takes longer",
+            "extra time",
+            "more time",
+            "adds time",
+            "lag",
+            "longer"
+          ]
+        ]
+      }
+    }
+  },
+  "authored-notool-004": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 2,
+        "key_facts": [
+          [
+            "learned",
+            "parameter",
+            "trained"
+          ],
+          [
+            "intermediate",
+            "computed",
+            "during inference",
+            "forward pass",
+            "as data",
+            "as input"
+          ]
+        ]
+      }
+    }
+  },
+  "authored-notool-005": {
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 30,
+        "tolerance": 0
+      }
+    }
+  },
+  "authored-unanswerable-001": {
+    "answer_check": {
+      "mode": "abstain",
+      "params": {
+        "forbid": [
+          "(scor\\w*|achiev\\w*|reach\\w*|obtain\\w*)[^.\\n]{0,40}?\\b\\d{1,3}(\\.\\d+)?\\s?%?[^.\\n]{0,25}?\\bon (the )?mlperf",
+          "mlperf[^.\\n]{0,60}?\\b(score|result|accuracy)\\b[^.\\n]{0,15}?\\b(of|was|is|:)\\s*\\d"
+        ]
+      }
+    },
+    "notes": "Premise is false. Declining passes. Fails only if a score is attributed to MLPerf: citing the paper's real numbers (e.g. AppWorld 59.5%) alongside a refusal is correct. Revised after the first full run, where a bare-percentage pattern failed correct refusals."
+  },
+  "authored-unanswerable-002": {
+    "answer_check": {
+      "mode": "abstain",
+      "params": {
+        "forbid": [
+          "\\$\\s?\\d",
+          "\\d[\\d,]*\\s?(usd|dollars)"
+        ]
+      }
+    },
+    "notes": "The paper gives time and hardware, not a dollar cost. Any dollar figure fails, estimated or not."
+  },
+  "authored-unanswerable-003": {
+    "answer_check": {
+      "mode": "abstain",
+      "params": {
+        "forbid": [
+          "\\d+(\\.\\d+)?\\s?(j|kj|wh|kwh|joules?)\\b"
+        ]
+      }
+    }
+  },
+  "authored-toolerror-001": {
+    "answer_check": {
+      "mode": "abstain",
+      "params": {
+        "phrases": [
+          "only covers",
+          "only supports",
+          "only provides",
+          "only offers",
+          "only lists",
+          "only returns",
+          "limited to",
+          "not available",
+          "not supported",
+          "does not support",
+          "doesn't support",
+          "cannot",
+          "can't",
+          "unable",
+          "not able",
+          "no option",
+          "only has"
+        ],
+        "forbid": [
+          "2026-04-2[0-4]"
+        ]
+      }
+    },
+    "notes": "The tool covers this week and next only. Explaining the limit passes; listing releases for 04-20 to 04-24 means they were invented. Debatable case: an agent may route around the calendar with web_search and list real releases. That is scored as a failure because the question says 'using the economic calendar'; it conflates tool-limit handling with instruction following."
+  },
+  "authored-toolerror-002": {
+    "answer_check": {
+      "mode": "abstain",
+      "params": {
+        "forbid": [
+          "\\$\\s?\\d",
+          "\\d+(\\.\\d+)?\\s?(million|billion)"
+        ]
+      }
+    },
+    "notes": "The knowledge base holds research papers, not company financials."
+  },
+  "authored-multihop-001": {
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 3,
+        "key_facts": [
+          "attention is all you need",
+          [
+            "path length",
+            "shorter path",
+            "long range",
+            "distant position",
+            "dependencies"
+          ],
+          "parallel",
+          "sequential"
+        ]
+      }
+    }
+  },
+  "authored-multihop-002": {
+    "reference_answer": "The Dynamic RAG (DRAGIN) paper says existing dynamic RAG methods decide when to retrieve with static rules and limit what to retrieve to the most recent sentence or last few tokens. ManuRAG says manufacturing QA spans text, images, formulas, CAD models, tables, sensor data and video, which text-oriented retrieval handles poorly and which needs format-specific processing.",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 3,
+        "key_facts": [
+          [
+            "dragin",
+            "dynamic rag"
+          ],
+          [
+            "static",
+            "when to retrieve",
+            "recent sentence",
+            "last few tokens",
+            "single round",
+            "single-round"
+          ],
+          [
+            "manurag",
+            "manufactur"
+          ],
+          [
+            "multimodal",
+            "multi modal",
+            "image",
+            "formula",
+            "cad"
+          ]
+        ]
+      }
+    },
+    "notes": "Written from the corpus (cf. tasks 005, 006, 009, 010). Needs two papers, each with its problem; 3 of the 4 facts."
+  },
+  "authored-multitool-001": {
+    "reference_answer": "HotpotQA requires multi-hop reasoning across multiple supporting documents, e.g. through a bridge entity or by comparing entities, with sentence-level supporting facts. Per the recorded FRED calendar, this week's Tier 1 releases are Gross Domestic Product and Personal Income and Outlays (2026-04-09) and the Consumer Price Index (2026-04-10).",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 3,
+        "key_facts": [
+          [
+            "multiple document",
+            "multiple supporting",
+            "multiple paragraph",
+            "several document",
+            "two document",
+            "more than one document",
+            "across document",
+            "bridge",
+            "supporting fact"
+          ],
+          [
+            "gross domestic product",
+            "gdp"
+          ],
+          [
+            "consumer price index",
+            "cpi"
+          ]
+        ]
+      }
+    },
+    "notes": "'multi-hop' is in the question, so the fact is what the challenge involves, not the word."
+  },
+  "authored-multitool-002": {
+    "reference_answer": "ACE describes context collapse: monolithic rewriting of the accumulated context by an LLM degrades it into shorter, less informative summaries over time, causing sharp drops in performance. The web half depends on the recorded search fixture.",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "min_hits": 2,
+        "key_facts": [
+          [
+            "rewrit"
+          ],
+          [
+            "shorter",
+            "less informative",
+            "degrad",
+            "erod",
+            "loses detail",
+            "loss of detail"
+          ]
+        ]
+      }
+    },
+    "notes": "Scores the corpus half only; the web half is time-sensitive. Whether web_search was called is measured by tool correctness."
+  }
+}

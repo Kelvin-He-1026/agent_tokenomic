@@ -1,0 +1,11 @@
+{
+  "fixture_id": "6966733aa4b2bddf",
+  "tool": "web_search",
+  "args": {
+    "query": "context collapse"
+  },
+  "normalized_key": "web_search|query=collapse context",
+  "result": "Summary: Context collapse refers to merging different audiences into one on social media, leading to difficulty in tailoring messages. It often results in unintended negative reactions. The term was popularized by danah boyd.\n\nSources:\n\n1. Context collapse - Wikipedia\n   URL: https://en.wikipedia.org/wiki/Context_collapse\n   Context collapse or \"the flattening of multiple audiences into a single context \"Context (language use)\")\" is a term arising out of the study of human interaction on the internet, especially within social media. Context collapse \"generally occurs when a surfeit of different audiences occupy the same...\n\n2. Context Collapse - by Ryan Ruby\n   URL: https://www.sevenstories.com/books/4657-context-collapse\n   \u201cContext Collapse is an erudite and a perceptive essay in the form of a poem, which traces the history of poetry from ancient orality to the electronic age.\n\n3. ELI5: What is \"context collapse\"? : r/explainlikeimfive\n   URL: https://www.reddit.com/r/explainlikeimfive/comments/qeak30/eli5_what_is_context_collapse\n   Context collapse is when your audiences have merged into one; that is, you can no longer tell different stories to different audiences.\n\n4. Context Collapse: When It's NOT About You\n   URL: https://www.psichi.org/members/blog_view.asp?id=987366&post=510023\n   Context collapse is, in a sense, the inability to remember this fact. Some tips to prevent oneself from falling into the context collapse trap are to understand\n\n5. how \u201ccontext collapse\u201d was coined: my recollection | danah boyd | apophenia\n   URL: https://www.zephoria.org/thoughts/archives/2013/12/08/coining-context-collapse.html\n   When I refer to context collapse now, I often point back to Joshua Meyrowitz because he\u2019s the one that helped that concept really click in my head, even if he didn\u2019t call it \u201ccollapsed contexts\u201d or \u201ccontext collapse.\u201d As with many academic concepts, I see the notion of \u201ccontext collapse\u201d as being pr...",
+  "recorded_at": "2026-09-18T21:09:02.075149+00:00",
+  "recorded_by": "langgraph/meta-llama/Llama-3.3-70B-Instruct"
+}
