@@ -5,6 +5,7 @@
 .venv/
 __pycache__/
 *.pyc
+venv/
 
 # Secrets: never commit. Keys are loaded from here by agent/env.py.
 .env

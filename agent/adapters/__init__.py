@@ -18,9 +18,9 @@ def get_adapter(name: str, cfg: RunConfig) -> AgentAdapter:
 
         return CrewAIAdapter(cfg)
     if name == "openai_agents":
-        from .openai_agents_agent import OpenAIAgentsAdapter
+        from ..openai_agents.react_agent import OpenAIAgentsReActAgent
 
-        return OpenAIAgentsAdapter(cfg)
+        return OpenAIAgentsReActAgent(cfg)
     raise ValueError(f"unknown framework '{name}'; expected one of {FRAMEWORKS}")
 
 

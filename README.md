@@ -24,6 +24,8 @@ agent/                   the package
 │   └── __init__.py      the runtime factory
 ├── langGraph/           LangGraph runtime
 │   └── react_agent.py   Phase 1 architecture (Phase 2 adds judge_loop, router_judge)
+├── openai_agents/       OpenAI Agents SDK runtime
+│   └── react_agent.py   Phase 1 architecture
 ├── proxy/
 │   ├── server.py        OpenAI-compatible logging proxy (source of LLM truth)
 │   └── mock_upstream.py scripted LLM server, so everything runs with no GPU
@@ -32,8 +34,10 @@ agent/                   the package
 │   └── cli.py           run a cell, frameworks interleaved per task
 └── dataset/build_tasks.py   reference GT + authored items -> Phase 1 tasks
 
-configs/     pilot_mock.yaml (no GPU), pilot_qwen.yaml (Qwen3.8-27B cell)
-dataset/     tasks/ (annotated), fixtures/ (recorded tool responses), authored_tasks.json
+configs/     one YAML per cell: pilot_mock (no GPU), pilot_qwen, pilot_nemotron,
+             pilot_llama8b, pilot_llama70b
+dataset/     tasks/phase1.json (the 34 tasks that run), its sources (reference/,
+             authored_tasks.json, reviewed_checks.json), fixtures/ (recorded tool responses)
 model/       local weights, one dir per model + MANIFEST.json (never fetched at run time)
 db/chroma/   the frozen retrieval index
 output/runs/ telemetry per cell: config/run/llm_call/tool_call/eval + blobs/
@@ -41,9 +45,9 @@ scripts/     start_stack.sh, stop_stack.sh, fetch_models.py, serve_vllm.sh,
              build_index.py, record_fixtures.py, parity_check.py
 ```
 
-Each runtime gets its own folder (`langGraph/`, and later `crewAI/`,
-`openai_agents/`), with one file per architecture inside it. `adapters/` holds
-only what is runtime-neutral.
+Each runtime gets its own folder (`langGraph/`, `openai_agents/`, and later
+`crewAI/`), with one file per architecture inside it. `adapters/` holds only
+what is runtime-neutral.
 
 ## Models are local
 
@@ -108,7 +112,7 @@ without weights. Use it after any harness change.
 ./scripts/start_stack.sh --mock
 .venv/bin/python -m agent.harness.cli \
     --config configs/pilot_mock.yaml --tasks dataset/tasks/phase1.json \
-    --frameworks langgraph --repeats 1 --limit 3 --out output/runs/smoke
+    --frameworks langgraph,openai_agents --repeats 1 --limit 3 --out output/runs/smoke
 ./scripts/stop_stack.sh --all
 ```
 
@@ -128,7 +132,7 @@ ATK_UPSTREAM=http://127.0.0.1:8000 ./scripts/start_stack.sh
 # 3. run
 .venv/bin/python -m agent.harness.cli \
     --config configs/pilot_qwen.yaml --tasks dataset/tasks/phase1.json \
-    --frameworks langgraph --repeats 3 --limit 15 --out output/runs/pilot_qwen
+    --frameworks langgraph,openai_agents --repeats 3 --limit 15 --out output/runs/pilot_qwen
 
 # 4. export
 .venv/bin/python scripts/export_csv.py --runs output/runs/pilot_qwen \
@@ -408,14 +412,37 @@ structural rather than a matter of remembering to copy values:
 
 `scripts/parity_check.py` diffs what each framework actually sent.
 
+```bash
+.venv/bin/python scripts/parity_check.py --config configs/pilot_mock.yaml \
+    --tasks dataset/tasks/phase1.json --frameworks langgraph,openai_agents
+```
+
+### Known residuals: LangGraph vs OpenAI Agents SDK
+
+Checked against the mock upstream. The system prompt, sampling settings and
+message history are identical; these differences remain and are kept rather
+than patched around, so the SDK runs as shipped:
+
+| Residual | Effect |
+| --- | --- |
+| The SDK adds `"strict": false` to every tool definition, with no setting to omit it | `parity_check.py` reports the `tools` field as differing. A chat template may render it into the prompt; the input-token cost is not yet measured on a real model |
+| At the step limit, the SDK runs the tool the last call asked for, and LangGraph does not | Both make exactly `max_llm_calls` LLM calls, but a `step_limit` run has one more tool call, and its tool time, on the SDK side |
+
+The SDK names the output limit `max_tokens` where LangGraph sends
+`max_completion_tokens`; the adapter sends the latter, so that field matches.
+
 ## Status
 
 - Working: config, telemetry, tool layer with record/replay, logging proxy,
   mock upstream, LangGraph ReAct agent, runner, CLI, dataset builder, CSV export.
   First real cell ran against Qwen3.8-27B on vLLM.
-- Next: CrewAI and OpenAI Agents SDK adapters; the hardware sampler (NVML +
-  RAPL); DeepEval scoring over stored traces; the analysis notebook.
+- OpenAI Agents SDK ReAct agent: implemented and smoke-tested against the mock
+  upstream only (all 34 tasks, matching LangGraph on status, LLM calls, tool
+  calls and tokens). Not yet run against a real model.
+- Next: the CrewAI adapter; a real-model cell with both frameworks; the
+  hardware sampler (NVML + RAPL); the analysis notebook.
 - Dataset: 34 tasks in `dataset/tasks/phase1.json` — 20 deduplicated from the
   reference ground truth, 14 authored (no-tool, unanswerable, tool-error,
-  multi-hop, multi-tool). Proposed `key_facts` are candidates, not ground
-  truth: every item is `needs_review: true` until a human confirms it.
+  multi-hop, multi-tool). Every task has a reviewed answer check
+  (`needs_review: false`), but none is human-verified yet
+  (`review.human_verified: false`).

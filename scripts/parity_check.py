@@ -21,7 +21,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from agent.adapters import get_adapter  # noqa: E402
 from agent.config import RunConfig  # noqa: E402
+from agent.harness.cli import _release_proxy  # noqa: E402
 from agent.harness.runner import Runner, Task  # noqa: E402
+from agent.telemetry import new_id  # noqa: E402
 
 # Fields that legitimately differ and are not parity failures.
 IGNORED = {"messages", "stream_options", "user"}
@@ -100,10 +102,13 @@ def main() -> int:
     task = Task.load_all(args.tasks)[0]
     out_dir = Path(args.out)
 
+    # One session for every framework: the proxy refuses a second session
+    # while the first still holds it.
+    session = new_id("sess_")
     payloads: dict[str, dict] = {}
     for framework in [f.strip() for f in args.frameworks.split(",") if f.strip()]:
         cell = replace(cfg, framework=framework)
-        runner = Runner(cell, get_adapter(framework, cell), out_dir)
+        runner = Runner(cell, get_adapter(framework, cell), out_dir, session=session)
         record = runner.run_task(task, repeat_idx=0, run_order_idx=0)
         print(f"{framework:16s} status={record.status:14s} "
               f"llm={record.n_llm_calls} tools={record.n_tool_calls} "
@@ -112,6 +117,7 @@ def main() -> int:
             print(f"  error: {record.error}")
             continue
         payloads[framework] = first_request(out_dir, record.run_id)
+    _release_proxy(cfg, session)
 
     if len(payloads) < 2:
         print("\nneed at least two working frameworks to compare")
