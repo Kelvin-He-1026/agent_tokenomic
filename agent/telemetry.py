@@ -13,8 +13,10 @@ import threading
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 SCHEMA_VERSION = "0.4.0"
 
@@ -26,6 +28,16 @@ def new_id(prefix: str = "") -> str:
 def now_ms() -> float:
     """Wall clock in milliseconds. Use monotonic_ms for durations."""
     return time.time() * 1000.0
+
+
+def file_stamp() -> str:
+    """YYYYmmdd_HHMMSS suffix for output directories and files.
+
+    US Eastern time, whatever the machine's own clock is set to (the servers
+    run on UTC), so a name reads the same wherever the run happened. Follows
+    daylight saving. Timestamps inside the records stay epoch milliseconds.
+    """
+    return datetime.now(ZoneInfo("America/New_York")).strftime("%Y%m%d_%H%M%S")
 
 
 def monotonic_ms() -> float:

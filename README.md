@@ -293,7 +293,9 @@ excludes warm-up and non-completed runs, and says which rows it left out.
 
 ## Outputs are timestamped
 
-Nothing overwrites an earlier run:
+Nothing overwrites an earlier run. Stamps are US Eastern time (following
+daylight saving) whatever the machine's clock is set to, from
+`telemetry.file_stamp`; timestamps inside the records stay epoch milliseconds.
 
 - **Harness**: `--out output/runs/pilot` writes to `output/runs/pilot_20260918_193012/`.
 - **Export**: `--out output/results.csv` writes `output/results_20260918_193012.csv`.

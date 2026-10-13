@@ -27,7 +27,6 @@ import json
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -35,7 +34,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from agent.eval.cases import build_case  # noqa: E402
 from agent.eval.claude_code_judge import ClaudeCodeJudge, JudgeError  # noqa: E402
 from agent.scoring import score as deterministic_score  # noqa: E402
-from agent.telemetry import EvalRecord, TelemetryWriter  # noqa: E402
+from agent.telemetry import EvalRecord, TelemetryWriter, file_stamp  # noqa: E402
 
 METRICS = ("faithfulness", "task_completion", "argument_correctness", "tool_correctness")
 
@@ -121,7 +120,7 @@ def main() -> int:
         print("  by metric:", by_metric)
         return 0
 
-    call_log = Path("output") / f"judge_calls_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
+    call_log = Path("output") / f"judge_calls_{file_stamp()}.jsonl"
 
     def score_one(item):
         d, run, task, case, metric_name = item

@@ -16,13 +16,13 @@ from __future__ import annotations
 import argparse
 import random
 import uuid
-from datetime import datetime
 from dataclasses import replace
 from pathlib import Path
 
 from ..adapters import FRAMEWORKS, get_adapter
 from ..env import load_env
 from ..config import RunConfig
+from ..telemetry import file_stamp
 from .runner import Runner, Task
 
 
@@ -285,7 +285,7 @@ def main() -> int:
     if not args.no_timestamp:
         # Every run gets its own directory, so repeated invocations never
         # overwrite or mix with each other.
-        args.out = f"{args.out.rstrip('/')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        args.out = f"{args.out.rstrip('/')}_{file_stamp()}"
 
     load_env()  # tool API keys, before any tool can need them
     cfg = RunConfig.from_yaml(args.config)

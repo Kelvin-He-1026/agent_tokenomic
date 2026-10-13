@@ -23,7 +23,6 @@ partial result that looks complete.
 from __future__ import annotations
 
 import argparse
-import datetime as dt
 import os
 import subprocess
 import sys
@@ -33,6 +32,10 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from agent.telemetry import file_stamp  # noqa: E402
+
 PY = str(ROOT / ".venv/bin/python")
 
 
@@ -160,7 +163,7 @@ def main() -> int:
         raise SystemExit("a harness is already running; wait for it (./scripts/status.sh)")
 
     modes = [m.strip() for m in args.modes.split(",") if m.strip()]
-    stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
+    stamp = file_stamp()
     base = yaml.safe_load((ROOT / args.base_config).read_text())
     model_dir = base["model"].get("local_dir") or base["model"]["repo"].split("/")[-1]
     kind = "probe" if args.tool_mode == "record" else "thinking_sweep"

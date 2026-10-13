@@ -375,8 +375,8 @@ def main() -> int:
     out = Path(args.out)
     if not args.no_timestamp:
         # Exports never overwrite each other; results_20260918_193012.csv etc.
-        from datetime import datetime
-        out = out.with_name(f"{out.stem}_{datetime.now().strftime('%Y%m%d_%H%M%S')}{out.suffix}")
+        from agent.telemetry import file_stamp
+        out = out.with_name(f"{out.stem}_{file_stamp()}{out.suffix}")
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=COLUMNS)
