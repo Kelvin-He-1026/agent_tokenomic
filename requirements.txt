@@ -11,12 +11,24 @@ langchain-openai
 langchain-core
 crewai
 openai-agents
+# imported directly by the Agents SDK adapter, for the shared client settings
+openai
+
+# model serving and weights (scripts/serve_vllm.sh, scripts/fetch_models.py)
+vllm
+huggingface_hub
 
 # tools
 requests
 tavily-python
 langchain-chroma
 langchain-huggingface
+# backend langchain-huggingface loads the embedding model with
+sentence-transformers
+
+# index build (scripts/build_index.py)
+pypdf
+langchain-text-splitters
 
 # evaluation
 deepeval

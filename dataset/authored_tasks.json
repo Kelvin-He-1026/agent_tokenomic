@@ -5,8 +5,20 @@
     "task_type": "no_tool",
     "difficulty": "easy",
     "reference_answer": "RAG stands for retrieval-augmented generation.",
-    "answer_check": {"mode": "key_facts", "params": {"key_facts": ["retrieval", "augmented", "generation"], "min_hits": 3}},
-    "acceptable_tool_sets": [[]],
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          "retrieval",
+          "augmented",
+          "generation"
+        ],
+        "min_hits": 3
+      }
+    },
+    "acceptable_tool_sets": [
+      []
+    ],
     "ideal_llm_calls": 1,
     "required_no_tool": true,
     "notes": "Common knowledge. A tool call here is unnecessary work, which is what this item measures."
@@ -17,8 +29,16 @@
     "task_type": "no_tool",
     "difficulty": "easy",
     "reference_answer": "2250",
-    "answer_check": {"mode": "numeric_tolerance", "params": {"value": 2250, "tolerance": 0}},
-    "acceptable_tool_sets": [[]],
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 2250,
+        "tolerance": 0
+      }
+    },
+    "acceptable_tool_sets": [
+      []
+    ],
     "ideal_llm_calls": 1,
     "required_no_tool": true,
     "notes": "Arithmetic. No tool exists that would help."
@@ -29,8 +49,19 @@
     "task_type": "no_tool",
     "difficulty": "easy",
     "reference_answer": "The orchestration layer noticeably slows down how long the agent takes to finish.",
-    "answer_check": {"mode": "key_facts", "params": {"key_facts": ["slow", "time"], "min_hits": 1}},
-    "acceptable_tool_sets": [[]],
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          "slow",
+          "time"
+        ],
+        "min_hits": 1
+      }
+    },
+    "acceptable_tool_sets": [
+      []
+    ],
     "ideal_llm_calls": 1,
     "required_no_tool": true,
     "notes": "Pure rewriting. Needs no external information."
@@ -41,8 +72,19 @@
     "task_type": "no_tool",
     "difficulty": "easy",
     "reference_answer": "Weights are the learned parameters stored in the model, while activations are the intermediate values computed as data passes through it.",
-    "answer_check": {"mode": "key_facts", "params": {"key_facts": ["parameter", "intermediate"], "min_hits": 1}},
-    "acceptable_tool_sets": [[]],
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          "parameter",
+          "intermediate"
+        ],
+        "min_hits": 1
+      }
+    },
+    "acceptable_tool_sets": [
+      []
+    ],
     "ideal_llm_calls": 1,
     "required_no_tool": true,
     "notes": "General knowledge; retrieval would be over-calling."
@@ -53,8 +95,16 @@
     "task_type": "no_tool",
     "difficulty": "easy",
     "reference_answer": "30",
-    "answer_check": {"mode": "numeric_tolerance", "params": {"value": 30, "tolerance": 0}},
-    "acceptable_tool_sets": [[]],
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 30,
+        "tolerance": 0
+      }
+    },
+    "acceptable_tool_sets": [
+      []
+    ],
     "ideal_llm_calls": 1,
     "required_no_tool": true,
     "notes": "Useful-throughput arithmetic."
@@ -65,8 +115,25 @@
     "task_type": "unanswerable",
     "difficulty": "medium",
     "reference_answer": "The indexed papers do not contain this information; no such benchmark result is available.",
-    "answer_check": {"mode": "key_facts", "params": {"key_facts": ["not", "no "], "min_hits": 1}},
-    "acceptable_tool_sets": [["retrieve"], ["retrieve", "web_search"]],
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          "not",
+          "no "
+        ],
+        "min_hits": 1
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
     "ideal_llm_calls": 2,
     "required_no_tool": false,
     "notes": "Premise is false. Success means saying the information is not available, not inventing a number. Retrieval is a legitimate first move."
@@ -77,8 +144,25 @@
     "task_type": "unanswerable",
     "difficulty": "medium",
     "reference_answer": "The paper reports training time and hardware but not a dollar cost, so the exact figure is not available.",
-    "answer_check": {"mode": "key_facts", "params": {"key_facts": ["not", "does not"], "min_hits": 1}},
-    "acceptable_tool_sets": [["retrieve"], ["retrieve", "web_search"]],
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          "not",
+          "does not"
+        ],
+        "min_hits": 1
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
     "ideal_llm_calls": 2,
     "required_no_tool": false,
     "notes": "Answerable-looking but absent from the source. Tests clean termination rather than fabrication."
@@ -89,8 +173,22 @@
     "task_type": "unanswerable",
     "difficulty": "medium",
     "reference_answer": "None of the indexed papers reports energy per successful agent task.",
-    "answer_check": {"mode": "key_facts", "params": {"key_facts": ["none", "not", "no paper"], "min_hits": 1}},
-    "acceptable_tool_sets": [["retrieve"]],
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          "none",
+          "not",
+          "no paper"
+        ],
+        "min_hits": 1
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
     "ideal_llm_calls": 2,
     "required_no_tool": false,
     "notes": "The corpus has no such paper. Over-retrying here shows up as steps."
@@ -101,8 +199,23 @@
     "task_type": "multi_hop",
     "difficulty": "medium",
     "reference_answer": "Attention Is All You Need introduces the Transformer. It prefers self-attention because it needs fewer sequential operations and shortens the path length between distant positions, which makes long-range dependencies easier to learn and allows more parallel computation.",
-    "answer_check": {"mode": "key_facts", "params": {"key_facts": ["Attention Is All You Need", "parallel", "path length", "sequential"], "min_hits": 2}},
-    "acceptable_tool_sets": [["retrieve"]],
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          "Attention Is All You Need",
+          "parallel",
+          "path length",
+          "sequential"
+        ],
+        "min_hits": 2
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
     "ideal_llm_calls": 3,
     "required_no_tool": false,
     "notes": "Two facts from one source; typically two retrieval rounds."
@@ -113,8 +226,18 @@
     "task_type": "multi_hop",
     "difficulty": "hard",
     "reference_answer": "REVIEW REQUIRED: fill from the corpus, naming two problems and their source papers.",
-    "answer_check": {"mode": "key_facts", "params": {"key_facts": [], "min_hits": 1}},
-    "acceptable_tool_sets": [["retrieve"]],
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [],
+        "min_hits": 1
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
     "ideal_llm_calls": 3,
     "required_no_tool": false,
     "notes": "Needs two retrievals across different papers. Reference answer must be written by hand from the corpus."
@@ -125,8 +248,21 @@
     "task_type": "multi_tool",
     "difficulty": "medium",
     "reference_answer": "REVIEW REQUIRED: combine the HotpotQA description with the recorded FRED calendar for the frozen as-of date.",
-    "answer_check": {"mode": "key_facts", "params": {"key_facts": ["multi-hop"], "min_hits": 1}},
-    "acceptable_tool_sets": [["retrieve", "fred_releases"]],
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          "multi-hop"
+        ],
+        "min_hits": 1
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve",
+        "fred_releases"
+      ]
+    ],
     "ideal_llm_calls": 3,
     "required_no_tool": false,
     "notes": "Deliberately forces two different tools in one task. The FRED half depends on the recorded fixture for as_of_date."
@@ -137,8 +273,21 @@
     "task_type": "multi_tool",
     "difficulty": "hard",
     "reference_answer": "REVIEW REQUIRED: ACE describes context collapse; the web half depends on the recorded search fixture.",
-    "answer_check": {"mode": "key_facts", "params": {"key_facts": ["context collapse"], "min_hits": 1}},
-    "acceptable_tool_sets": [["retrieve", "web_search"]],
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          "context collapse"
+        ],
+        "min_hits": 1
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
     "ideal_llm_calls": 3,
     "required_no_tool": false,
     "notes": "Retrieve then web. Needs a recorded web_search fixture for whatever query the model issues, which is the weak point of replaying free-text search."
@@ -149,8 +298,23 @@
     "task_type": "tool_error",
     "difficulty": "medium",
     "reference_answer": "The calendar tool only covers this week and next week, so the requested window is not available.",
-    "answer_check": {"mode": "key_facts", "params": {"key_facts": ["not", "only", "cannot"], "min_hits": 1}},
-    "acceptable_tool_sets": [["fred_releases"], []],
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          "not",
+          "only",
+          "cannot"
+        ],
+        "min_hits": 1
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ],
+      []
+    ],
     "ideal_llm_calls": 2,
     "required_no_tool": false,
     "notes": "The window enum has no value for this. A malformed argument here is recorded as n_malformed_tool_calls; the right behaviour is to explain the limit."
@@ -161,10 +325,508 @@
     "task_type": "tool_error",
     "difficulty": "medium",
     "reference_answer": "The knowledge base contains research papers, not company financials, so this information is not available.",
-    "answer_check": {"mode": "key_facts", "params": {"key_facts": ["not available", "not contain", "no "], "min_hits": 1}},
-    "acceptable_tool_sets": [["retrieve"], ["retrieve", "web_search"]],
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          "not available",
+          "not contain",
+          "no "
+        ],
+        "min_hits": 1
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
     "ideal_llm_calls": 2,
     "required_no_tool": false,
     "notes": "Retrieval succeeds but returns nothing relevant. Tests whether the agent stops or keeps switching tools."
+  },
+  {
+    "task_id": "authored-multihop-003",
+    "question": "According to the HotpotQA paper's data split table, how many examples are there in total across the three training splits (train-easy, train-medium and train-hard)? Give the number.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "90,564: train-easy has 18,089, train-medium 56,814 and train-hard 15,661.",
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 90564,
+        "tolerance": 0
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "notes": "Find the split table, then add three figures. The paper never prints the sum."
+  },
+  {
+    "task_id": "authored-multihop-004",
+    "question": "What percentage of HotpotQA's training examples (train-easy, train-medium and train-hard combined) are in the train-hard split? Answer to one decimal place.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "About 17.3%: 15,661 of 90,564 training examples.",
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 17.3,
+        "tolerance": 0.1
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "notes": "Same table as multihop-003, plus a division. 15,661 / 90,564 = 17.29%."
+  },
+  {
+    "task_id": "authored-multihop-005",
+    "question": "In the Transformer paper, how many times more parameters does the big model have than the base model, and how many BLEU points higher does the big model score on WMT 2014 English-to-German? Give the ratio to one decimal place.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "About 3.3 times (213 million against 65 million parameters), and 1.1 BLEU higher (28.4 against 27.3).",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "3.3",
+            "3.28"
+          ],
+          "1.1"
+        ],
+        "min_hits": 2
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "notes": "Parameters are in the variations table and BLEU in the results table. key_facts rather than numeric_tolerance because the scorer reads '3.3x' as 3. Weak spot: '3.3' also matches the base model's 3.3e18 training cost if an answer quotes it."
+  },
+  {
+    "task_id": "authored-multihop-006",
+    "question": "According to the Transformer paper's comparison table, how many times higher was the English-to-German training cost in FLOPs of the GNMT + RL Ensemble than that of the Transformer (big) model? Give the ratio to one decimal place.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "About 7.8 times: 1.8e20 FLOPs for the GNMT + RL Ensemble against 2.3e19 for Transformer (big).",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "7.8",
+            "7.83"
+          ]
+        ],
+        "min_hits": 1
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "notes": "Needs two cells of a table that PDF extraction flattens ('1.8 · 1020'), then a division. Likely retrieval-limited for weaker models."
+  },
+  {
+    "task_id": "authored-multihop-007",
+    "question": "The Transformer paper gives the number of training steps and the total training time for its big model. From those two figures, how many training steps per hour did the big model complete on average? Round to the nearest whole number.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "About 3,571 steps per hour: 300,000 steps in 3.5 days, which is 84 hours.",
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 3571,
+        "tolerance": 10
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "notes": "300,000 / 84 = 3,571. Using the paper's rounded 1.0 s step time gives 3,600, which is deliberately outside the tolerance: the question says to use steps and total time."
+  },
+  {
+    "task_id": "authored-multihop-008",
+    "question": "One of the datasets the DRAGIN paper uses in its experiments is introduced by another paper in the knowledge base. Which dataset is it, and how many question-answer pairs does that paper say it contains?",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "HotpotQA, which its own paper describes as 113k Wikipedia-based question-answer pairs (112,779 valid examples).",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "hotpot"
+          ],
+          [
+            "113k",
+            "113 k",
+            "113,000",
+            "112,779"
+          ]
+        ],
+        "min_hits": 2
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "ideal_llm_calls": 3,
+    "required_no_tool": false,
+    "notes": "Cross-paper: DRAGIN's dataset list (2WikiMultihopQA, HotpotQA, IIRC, StrategyQA), then the HotpotQA paper for the size."
+  },
+  {
+    "task_id": "authored-multihop-009",
+    "question": "ManuRAG is evaluated on three datasets, while HotpotQA is a single large one. Using the totals each paper reports, about how many times more question-answer pairs does HotpotQA contain than ManuRAG's three datasets combined? Round to the nearest whole number.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "About 74 times: 112,779 HotpotQA examples against 1,515 ManuRAG question-answer pairs.",
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 74.5,
+        "tolerance": 0.6
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "ideal_llm_calls": 3,
+    "required_no_tool": false,
+    "notes": "Cross-paper arithmetic. 112,779 / 1,515 = 74.4; starting from the abstract's rounded 113k gives 74.6, so both 74 and 75 pass."
+  },
+  {
+    "task_id": "authored-multihop-010",
+    "question": "On the AppWorld leaderboard, ACE is compared with a top-ranked production agent. Name that agent and the model powering it, the model ACE itself used, and the split on which ACE surpassed it.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "The agent is IBM CUGA, powered by GPT-4.1. ACE used the smaller open-source DeepSeek-V3.1 and surpassed IBM CUGA on the harder test-challenge split.",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "cuga"
+          ],
+          [
+            "gpt 4.1",
+            "gpt4.1"
+          ],
+          [
+            "deepseek"
+          ],
+          [
+            "challenge"
+          ]
+        ],
+        "min_hits": 4
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "notes": "Four linked facts from one passage; all four required."
+  },
+  {
+    "task_id": "authored-multihop-011",
+    "question": "The ManuRAG paper describes four variants of its framework. Which variant works on text only, with no image vector database, and which variant converts figures and tables into descriptive text before indexing them?",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "ManuRAG2 works on text only, without the image vector database. ManuRAG4 converts figures and tables into descriptive text with a multimodal model before indexing.",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "manurag2",
+            "manurag 2",
+            "variant 2",
+            "second variant"
+          ],
+          [
+            "manurag4",
+            "manurag 4",
+            "variant 4",
+            "fourth variant"
+          ]
+        ],
+        "min_hits": 2
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "notes": "Weak spot: the check confirms both variants are named, not that each is matched to the right property."
+  },
+  {
+    "task_id": "authored-multihop-012",
+    "question": "List every Tier 1 economic release on the calendar across both this week and next week.",
+    "task_type": "multi_hop",
+    "difficulty": "medium",
+    "reference_answer": "This week: Gross Domestic Product and Personal Income and Outlays (2026-04-09) and the Consumer Price Index (2026-04-10). Next week: the Producer Price Index (2026-04-14).",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "gross domestic product",
+            "gdp"
+          ],
+          "personal income",
+          [
+            "consumer price index",
+            "cpi"
+          ],
+          [
+            "producer price index",
+            "ppi"
+          ]
+        ],
+        "min_hits": 4
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ]
+    ],
+    "ideal_llm_calls": 3,
+    "required_no_tool": false,
+    "notes": "Needs the calendar tool twice, once per window. Built from the recorded FRED fixtures."
+  },
+  {
+    "task_id": "authored-multihop-013",
+    "question": "Which economic release appears on the calendar in both this week and next week, and on which two dates?",
+    "task_type": "multi_hop",
+    "difficulty": "medium",
+    "reference_answer": "Manufacturer's Shipments, Inventories, and Orders, on 2026-04-09 and 2026-04-16.",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "manufacturer"
+          ],
+          [
+            "04 09",
+            "april 9",
+            "apr 9",
+            "9 april",
+            "9 apr",
+            "9th"
+          ],
+          [
+            "04 16",
+            "april 16",
+            "apr 16",
+            "16 april",
+            "16 apr",
+            "16th"
+          ]
+        ],
+        "min_hits": 3
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ]
+    ],
+    "ideal_llm_calls": 3,
+    "required_no_tool": false,
+    "notes": "Two calendar calls and a comparison. Weak spot: an answer that dumps both weeks without identifying the repeat also passes."
+  },
+  {
+    "task_id": "authored-lookup-001",
+    "question": "Which economic releases are scheduled for 16 April 2026?",
+    "task_type": "single_tool_lookup",
+    "difficulty": "hard",
+    "reference_answer": "G.17 Industrial Production and Capacity Utilization at 9:15 AM, and Manufacturer's Shipments, Inventories, and Orders at 10:00 AM.",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "g.17",
+            "industrial production"
+          ],
+          [
+            "manufacturer"
+          ]
+        ],
+        "min_hits": 2
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ]
+    ],
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "notes": "The tool takes a window, not a date: the agent has to work out from today's date (2026-04-06) that the 16th falls in next_week."
+  },
+  {
+    "task_id": "authored-lookup-002",
+    "question": "The Attention Is All You Need paper trained its big model on 16 GPUs for a week. What BLEU score did that model reach on WMT 2014 English-to-German?",
+    "task_type": "single_tool_lookup",
+    "difficulty": "hard",
+    "reference_answer": "The premise is wrong: the big model was trained on 8 P100 GPUs for 3.5 days, not 16 GPUs for a week. It reached 28.4 BLEU on WMT 2014 English-to-German.",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "eight",
+            "8 gpus",
+            "8 p100",
+            "8 nvidia"
+          ],
+          "3.5",
+          "28.4"
+        ],
+        "min_hits": 3
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "notes": "False premise. Passing needs the BLEU score and both corrections; giving 28.4 while accepting the premise fails."
+  },
+  {
+    "task_id": "authored-toolerror-003",
+    "question": "Using the economic calendar, list the economic releases scheduled for 20 to 24 April 2026.",
+    "task_type": "tool_error",
+    "difficulty": "hard",
+    "reference_answer": "The calendar tool only covers this week and next week (2026-04-06 to 2026-04-17), so releases for 20 to 24 April cannot be listed.",
+    "answer_check": {
+      "mode": "abstain",
+      "params": {
+        "phrases": [
+          "only covers",
+          "only supports",
+          "only provides",
+          "only offers",
+          "only lists",
+          "only returns",
+          "limited to",
+          "not supported",
+          "does not support",
+          "cannot",
+          "unable",
+          "not able",
+          "no option",
+          "only has",
+          "outside"
+        ],
+        "forbid": [
+          "2026-04-2[0-4]\\s*\\|",
+          "(apr(il)?\\.?\\s+2[0-4]|2[0-4](st|nd|rd|th)?\\s+apr(il)?)[^.\\n]{0,60}\\d{1,2}:\\d{2}\\s*(am|pm)"
+        ]
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ],
+      []
+    ],
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "notes": "Explicit dates version of toolerror-001, which every model failed by relabelling next week. Forbidden: a table row or a timed entry for 20-24 April, which can only be invented."
+  },
+  {
+    "task_id": "authored-unanswerable-004",
+    "question": "According to the economic calendar, on what day this week is the Employment Situation (jobs) report released?",
+    "task_type": "unanswerable",
+    "difficulty": "hard",
+    "reference_answer": "The Employment Situation report is not on this week's calendar, so no release day can be given.",
+    "answer_check": {
+      "mode": "abstain",
+      "params": {
+        "phrases": [
+          "not scheduled",
+          "not on the calendar",
+          "not on this week",
+          "not listed",
+          "not among",
+          "is not on",
+          "no employment situation"
+        ],
+        "forbid": [
+          "employment situation[^\\n]{0,80}\\d{1,2}:\\d{2}\\s*(am|pm)",
+          "(is|will be) released on (monday|tuesday|wednesday|thursday|friday)"
+        ]
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ]
+    ],
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "notes": "False premise against a tool result: the report is absent from the recorded week. Forbidden: a release time or weekday for it."
+  },
+  {
+    "task_id": "authored-notool-006",
+    "question": "An agent run uses 3,000 input tokens and 300 output tokens, and 80% of runs succeed. Charging the failed runs to the successful ones, how many tokens does one successful task cost on average? Give just the number.",
+    "task_type": "no_tool",
+    "difficulty": "medium",
+    "reference_answer": "4,125",
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 4125,
+        "tolerance": 0
+      }
+    },
+    "acceptable_tool_sets": [
+      []
+    ],
+    "ideal_llm_calls": 1,
+    "required_no_tool": true,
+    "notes": "Two-step arithmetic, (3,000 + 300) / 0.8. Llama-3.1-8B called a non-existent calculator tool on the simpler notool-002."
   }
 ]

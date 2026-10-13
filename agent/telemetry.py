@@ -101,6 +101,9 @@ class RunRecord:
     energy_gpu_j: float | None = None
     energy_cpu_j: float | None = None
     harness_version: str = ""
+    # Free-text label for what this execution was for (--run-code). Not part of
+    # config_id: it names the run, it is not a controlled variable.
+    run_code: str = ""
     schema_version: str = SCHEMA_VERSION
 
 

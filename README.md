@@ -36,7 +36,7 @@ agent/                   the package
 
 configs/     one YAML per cell: pilot_mock (no GPU), pilot_qwen, pilot_nemotron,
              pilot_llama8b, pilot_llama70b
-dataset/     tasks/phase1.json (the 34 tasks that run), its sources (reference/,
+dataset/     tasks/phase1.json (the 50 tasks that run), its sources (reference/,
              authored_tasks.json, reviewed_checks.json), fixtures/ (recorded tool responses)
 model/       local weights, one dir per model + MANIFEST.json (never fetched at run time)
 db/chroma/   the frozen retrieval index
@@ -174,6 +174,7 @@ If it ever reports processes still holding the GPU, check with
 | `--limit N` | Sample N tasks spread across all task types (0 = all, the default) |
 | `--tool-mode record` | Probe run: tools hit live APIs and every call is saved as a fixture |
 | `--seed N` | Seeds the run-order shuffle |
+| `--run-code LABEL` | Names what this execution is for (e.g. `openAISDK-v1`). Stored on every run row and exported as the `run_code` column; not part of `config_id` |
 | `--no-timestamp` | Use `--out` exactly; by default a `_YYYYmmdd_HHMMSS` suffix is added |
 
 Every run starts with a preflight check: proxy reachable, its upstream
@@ -437,12 +438,15 @@ The SDK names the output limit `max_tokens` where LangGraph sends
   mock upstream, LangGraph ReAct agent, runner, CLI, dataset builder, CSV export.
   First real cell ran against Qwen3.8-27B on vLLM.
 - OpenAI Agents SDK ReAct agent: implemented and smoke-tested against the mock
-  upstream only (all 34 tasks, matching LangGraph on status, LLM calls, tool
-  calls and tokens). Not yet run against a real model.
-- Next: the CrewAI adapter; a real-model cell with both frameworks; the
+  upstream (matching LangGraph on status, LLM calls, tool calls and tokens),
+  then run on the original 34 tasks against Qwen3.8-27B, Nemotron, Llama-3.1-8B
+  and Llama-3.3-70B (run code `openAISDK-v1`).
+- Next: the CrewAI adapter; a cell with both frameworks interleaved; the
   hardware sampler (NVML + RAPL); the analysis notebook.
-- Dataset: 34 tasks in `dataset/tasks/phase1.json` — 20 deduplicated from the
-  reference ground truth, 14 authored (no-tool, unanswerable, tool-error,
-  multi-hop, multi-tool). Every task has a reviewed answer check
+- Dataset: 50 tasks in `dataset/tasks/phase1.json` — 20 deduplicated from the
+  reference ground truth, 30 authored (no-tool, unanswerable, tool-error,
+  multi-hop, multi-tool). The last 16, added 2026-10-13, lean hard: arithmetic
+  over paper tables, cross-paper questions, false premises and calendar
+  reasoning. They have not been run against a model yet. Every task has a reviewed answer check
   (`needs_review: false`), but none is human-verified yet
   (`review.human_verified: false`).

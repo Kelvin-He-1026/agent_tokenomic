@@ -636,5 +636,53 @@
       }
     },
     "notes": "Scores the corpus half only; the web half is time-sensitive. Whether web_search was called is measured by tool correctness."
+  },
+  "authored-multihop-003": {
+    "notes": "Find the split table, then add three figures. The paper never prints the sum. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-multihop-004": {
+    "notes": "Same table as multihop-003, plus a division. 15,661 / 90,564 = 17.29%. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-multihop-005": {
+    "notes": "Parameters are in the variations table and BLEU in the results table. key_facts rather than numeric_tolerance because the scorer reads '3.3x' as 3. Weak spot: '3.3' also matches the base model's 3.3e18 training cost if an answer quotes it. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-multihop-006": {
+    "notes": "Needs two cells of a table that PDF extraction flattens ('1.8 · 1020'), then a division. Likely retrieval-limited for weaker models. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-multihop-007": {
+    "notes": "300,000 / 84 = 3,571. Using the paper's rounded 1.0 s step time gives 3,600, which is deliberately outside the tolerance: the question says to use steps and total time. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-multihop-008": {
+    "notes": "Cross-paper: DRAGIN's dataset list (2WikiMultihopQA, HotpotQA, IIRC, StrategyQA), then the HotpotQA paper for the size. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-multihop-009": {
+    "notes": "Cross-paper arithmetic. 112,779 / 1,515 = 74.4; starting from the abstract's rounded 113k gives 74.6, so both 74 and 75 pass. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-multihop-010": {
+    "notes": "Four linked facts from one passage; all four required. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-multihop-011": {
+    "notes": "Weak spot: the check confirms both variants are named, not that each is matched to the right property. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-multihop-012": {
+    "notes": "Needs the calendar tool twice, once per window. Built from the recorded FRED fixtures. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-multihop-013": {
+    "notes": "Two calendar calls and a comparison. Weak spot: an answer that dumps both weeks without identifying the repeat also passes. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-lookup-001": {
+    "notes": "The tool takes a window, not a date: the agent has to work out from today's date (2026-04-06) that the 16th falls in next_week. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-lookup-002": {
+    "notes": "False premise. Passing needs the BLEU score and both corrections; giving 28.4 while accepting the premise fails. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-toolerror-003": {
+    "notes": "Explicit dates version of toolerror-001, which every model failed by relabelling next week. Forbidden: a table row or a timed entry for 20-24 April, which can only be invented. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-unanswerable-004": {
+    "notes": "False premise against a tool result: the report is absent from the recorded week. Forbidden: a release time or weekday for it. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+  },
+  "authored-notool-006": {
+    "notes": "Two-step arithmetic, (3,000 + 300) / 0.8. Llama-3.1-8B called a non-existent calculator tool on the simpler notool-002. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
   }
 }

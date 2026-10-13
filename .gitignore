@@ -9,7 +9,7 @@ venv/
 
 # Secrets: never commit. Keys are loaded from here by agent/env.py.
 .env
-
+.venv
 # Model weights, ~280 GB. Fetch with scripts/fetch_models.py;
 # exact upstream commits are recorded in model/MANIFEST.json.
 model/

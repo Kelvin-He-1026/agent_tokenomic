@@ -263,6 +263,9 @@ def main() -> int:
     ap.add_argument("--no-timestamp", action="store_true",
                     help="use --out exactly as given (the sweep does this inside its own stamped dir)")
     ap.add_argument("--seed", type=int, default=7)
+    ap.add_argument("--run-code", default="",
+                    help="label recorded on every run and in the CSV, saying what "
+                         "this execution is for (e.g. openAISDK-v1)")
     ap.add_argument(
         "--append",
         action="store_true",
@@ -309,6 +312,7 @@ def main() -> int:
             get_adapter(f, replace(cfg, framework=f)),
             args.out,
             session=session,
+            run_code=args.run_code,
         )
         for f in frameworks
     }
@@ -337,7 +341,8 @@ def main() -> int:
     print(f"warmed retrieval in {warm_ms:.0f}ms")
 
     plan = build_plan(tasks, frameworks, args.repeats, args.seed)
-    print(f"{len(plan)} runs -> {args.out}")
+    print(f"{len(plan)} runs -> {args.out}"
+          + (f"  (run code: {args.run_code})" if args.run_code else ""))
     print(f"prompt_hash={list(runners.values())[0].prompt_hash} "
           f"tool_schema_hash={list(runners.values())[0].schema_hash}")
 

@@ -1460,5 +1460,677 @@
       "human_verified": false,
       "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
     }
+  },
+  {
+    "task_id": "authored-multihop-003",
+    "question": "According to the HotpotQA paper's data split table, how many examples are there in total across the three training splits (train-easy, train-medium and train-hard)? Give the number.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "90,564: train-easy has 18,089, train-medium 56,814 and train-hard 15,661.",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 90564,
+        "tolerance": 0
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "Find the split table, then add three figures. The paper never prints the sum. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-multihop-004",
+    "question": "What percentage of HotpotQA's training examples (train-easy, train-medium and train-hard combined) are in the train-hard split? Answer to one decimal place.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "About 17.3%: 15,661 of 90,564 training examples.",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 17.3,
+        "tolerance": 0.1
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "Same table as multihop-003, plus a division. 15,661 / 90,564 = 17.29%. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-multihop-005",
+    "question": "In the Transformer paper, how many times more parameters does the big model have than the base model, and how many BLEU points higher does the big model score on WMT 2014 English-to-German? Give the ratio to one decimal place.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "About 3.3 times (213 million against 65 million parameters), and 1.1 BLEU higher (28.4 against 27.3).",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "3.3",
+            "3.28"
+          ],
+          "1.1"
+        ],
+        "min_hits": 2
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "Parameters are in the variations table and BLEU in the results table. key_facts rather than numeric_tolerance because the scorer reads '3.3x' as 3. Weak spot: '3.3' also matches the base model's 3.3e18 training cost if an answer quotes it. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-multihop-006",
+    "question": "According to the Transformer paper's comparison table, how many times higher was the English-to-German training cost in FLOPs of the GNMT + RL Ensemble than that of the Transformer (big) model? Give the ratio to one decimal place.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "About 7.8 times: 1.8e20 FLOPs for the GNMT + RL Ensemble against 2.3e19 for Transformer (big).",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "7.8",
+            "7.83"
+          ]
+        ],
+        "min_hits": 1
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "Needs two cells of a table that PDF extraction flattens ('1.8 \u00b7 1020'), then a division. Likely retrieval-limited for weaker models. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-multihop-007",
+    "question": "The Transformer paper gives the number of training steps and the total training time for its big model. From those two figures, how many training steps per hour did the big model complete on average? Round to the nearest whole number.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "About 3,571 steps per hour: 300,000 steps in 3.5 days, which is 84 hours.",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 3571,
+        "tolerance": 10
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "300,000 / 84 = 3,571. Using the paper's rounded 1.0 s step time gives 3,600, which is deliberately outside the tolerance: the question says to use steps and total time. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-multihop-008",
+    "question": "One of the datasets the DRAGIN paper uses in its experiments is introduced by another paper in the knowledge base. Which dataset is it, and how many question-answer pairs does that paper say it contains?",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "HotpotQA, which its own paper describes as 113k Wikipedia-based question-answer pairs (112,779 valid examples).",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "hotpot"
+          ],
+          [
+            "113k",
+            "113 k",
+            "113,000",
+            "112,779"
+          ]
+        ],
+        "min_hits": 2
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 3,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "Cross-paper: DRAGIN's dataset list (2WikiMultihopQA, HotpotQA, IIRC, StrategyQA), then the HotpotQA paper for the size. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-multihop-009",
+    "question": "ManuRAG is evaluated on three datasets, while HotpotQA is a single large one. Using the totals each paper reports, about how many times more question-answer pairs does HotpotQA contain than ManuRAG's three datasets combined? Round to the nearest whole number.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "About 74 times: 112,779 HotpotQA examples against 1,515 ManuRAG question-answer pairs.",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 74.5,
+        "tolerance": 0.6
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 3,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "Cross-paper arithmetic. 112,779 / 1,515 = 74.4; starting from the abstract's rounded 113k gives 74.6, so both 74 and 75 pass. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-multihop-010",
+    "question": "On the AppWorld leaderboard, ACE is compared with a top-ranked production agent. Name that agent and the model powering it, the model ACE itself used, and the split on which ACE surpassed it.",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "The agent is IBM CUGA, powered by GPT-4.1. ACE used the smaller open-source DeepSeek-V3.1 and surpassed IBM CUGA on the harder test-challenge split.",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "cuga"
+          ],
+          [
+            "gpt 4.1",
+            "gpt4.1"
+          ],
+          [
+            "deepseek"
+          ],
+          [
+            "challenge"
+          ]
+        ],
+        "min_hits": 4
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "Four linked facts from one passage; all four required. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-multihop-011",
+    "question": "The ManuRAG paper describes four variants of its framework. Which variant works on text only, with no image vector database, and which variant converts figures and tables into descriptive text before indexing them?",
+    "task_type": "multi_hop",
+    "difficulty": "hard",
+    "reference_answer": "ManuRAG2 works on text only, without the image vector database. ManuRAG4 converts figures and tables into descriptive text with a multimodal model before indexing.",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "manurag2",
+            "manurag 2",
+            "variant 2",
+            "second variant"
+          ],
+          [
+            "manurag4",
+            "manurag 4",
+            "variant 4",
+            "fourth variant"
+          ]
+        ],
+        "min_hits": 2
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "Weak spot: the check confirms both variants are named, not that each is matched to the right property. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-multihop-012",
+    "question": "List every Tier 1 economic release on the calendar across both this week and next week.",
+    "task_type": "multi_hop",
+    "difficulty": "medium",
+    "reference_answer": "This week: Gross Domestic Product and Personal Income and Outlays (2026-04-09) and the Consumer Price Index (2026-04-10). Next week: the Producer Price Index (2026-04-14).",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "gross domestic product",
+            "gdp"
+          ],
+          "personal income",
+          [
+            "consumer price index",
+            "cpi"
+          ],
+          [
+            "producer price index",
+            "ppi"
+          ]
+        ],
+        "min_hits": 4
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 3,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "Needs the calendar tool twice, once per window. Built from the recorded FRED fixtures. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-multihop-013",
+    "question": "Which economic release appears on the calendar in both this week and next week, and on which two dates?",
+    "task_type": "multi_hop",
+    "difficulty": "medium",
+    "reference_answer": "Manufacturer's Shipments, Inventories, and Orders, on 2026-04-09 and 2026-04-16.",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "manufacturer"
+          ],
+          [
+            "04 09",
+            "april 9",
+            "apr 9",
+            "9 april",
+            "9 apr",
+            "9th"
+          ],
+          [
+            "04 16",
+            "april 16",
+            "apr 16",
+            "16 april",
+            "16 apr",
+            "16th"
+          ]
+        ],
+        "min_hits": 3
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 3,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "Two calendar calls and a comparison. Weak spot: an answer that dumps both weeks without identifying the repeat also passes. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-lookup-001",
+    "question": "Which economic releases are scheduled for 16 April 2026?",
+    "task_type": "single_tool_lookup",
+    "difficulty": "hard",
+    "reference_answer": "G.17 Industrial Production and Capacity Utilization at 9:15 AM, and Manufacturer's Shipments, Inventories, and Orders at 10:00 AM.",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "g.17",
+            "industrial production"
+          ],
+          [
+            "manufacturer"
+          ]
+        ],
+        "min_hits": 2
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "The tool takes a window, not a date: the agent has to work out from today's date (2026-04-06) that the 16th falls in next_week. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-lookup-002",
+    "question": "The Attention Is All You Need paper trained its big model on 16 GPUs for a week. What BLEU score did that model reach on WMT 2014 English-to-German?",
+    "task_type": "single_tool_lookup",
+    "difficulty": "hard",
+    "reference_answer": "The premise is wrong: the big model was trained on 8 P100 GPUs for 3.5 days, not 16 GPUs for a week. It reached 28.4 BLEU on WMT 2014 English-to-German.",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "key_facts",
+      "params": {
+        "key_facts": [
+          [
+            "eight",
+            "8 gpus",
+            "8 p100",
+            "8 nvidia"
+          ],
+          "3.5",
+          "28.4"
+        ],
+        "min_hits": 3
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "False premise. Passing needs the BLEU score and both corrections; giving 28.4 while accepting the premise fails. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-toolerror-003",
+    "question": "Using the economic calendar, list the economic releases scheduled for 20 to 24 April 2026.",
+    "task_type": "tool_error",
+    "difficulty": "hard",
+    "reference_answer": "The calendar tool only covers this week and next week (2026-04-06 to 2026-04-17), so releases for 20 to 24 April cannot be listed.",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "abstain",
+      "params": {
+        "phrases": [
+          "only covers",
+          "only supports",
+          "only provides",
+          "only offers",
+          "only lists",
+          "only returns",
+          "limited to",
+          "not supported",
+          "does not support",
+          "cannot",
+          "unable",
+          "not able",
+          "no option",
+          "only has",
+          "outside"
+        ],
+        "forbid": [
+          "2026-04-2[0-4]\\s*\\|",
+          "(apr(il)?\\.?\\s+2[0-4]|2[0-4](st|nd|rd|th)?\\s+apr(il)?)[^.\\n]{0,60}\\d{1,2}:\\d{2}\\s*(am|pm)"
+        ]
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ],
+      []
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "Explicit dates version of toolerror-001, which every model failed by relabelling next week. Forbidden: a table row or a timed entry for 20-24 April, which can only be invented. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-unanswerable-004",
+    "question": "According to the economic calendar, on what day this week is the Employment Situation (jobs) report released?",
+    "task_type": "unanswerable",
+    "difficulty": "hard",
+    "reference_answer": "The Employment Situation report is not on this week's calendar, so no release day can be given.",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "abstain",
+      "params": {
+        "phrases": [
+          "not scheduled",
+          "not on the calendar",
+          "not on this week",
+          "not listed",
+          "not among",
+          "is not on",
+          "no employment situation"
+        ],
+        "forbid": [
+          "employment situation[^\\n]{0,80}\\d{1,2}:\\d{2}\\s*(am|pm)",
+          "(is|will be) released on (monday|tuesday|wednesday|thursday|friday)"
+        ]
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ]
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 2,
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "False premise against a tool result: the report is absent from the recorded week. Forbidden: a release time or weekday for it. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
+  },
+  {
+    "task_id": "authored-notool-006",
+    "question": "An agent run uses 3,000 input tokens and 300 output tokens, and 80% of runs succeed. Charging the failed runs to the successful ones, how many tokens does one successful task cost on average? Give just the number.",
+    "task_type": "no_tool",
+    "difficulty": "medium",
+    "reference_answer": "4,125",
+    "reference_context": "",
+    "answer_check": {
+      "mode": "numeric_tolerance",
+      "params": {
+        "value": 4125,
+        "tolerance": 0
+      }
+    },
+    "acceptable_tool_sets": [
+      []
+    ],
+    "expected_args": {},
+    "ideal_llm_calls": 1,
+    "required_no_tool": true,
+    "replay_fixture_id": "",
+    "source": "authored",
+    "notes": "Two-step arithmetic, (3,000 + 300) / 0.8. Llama-3.1-8B called a non-existent calculator tool on the simpler notool-002. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "claude",
+      "date": "2026-09-18",
+      "human_verified": false,
+      "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    }
   }
 ]

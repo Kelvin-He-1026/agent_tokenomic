@@ -147,6 +147,8 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=0,
                     help="sample N tasks across task types; 0 = every task (default)")
     ap.add_argument("--out-root", default="")
+    ap.add_argument("--run-code", default="",
+                    help="label recorded on every run of every mode (passed to the harness)")
     ap.add_argument("--tool-mode", choices=["replay", "record"], default="replay",
                     help="'record' makes this a probe sweep: new web/FRED queries are fetched "
                          "live and saved as fixtures. Probe results are not for analysis.")
@@ -205,6 +207,7 @@ def main() -> int:
             "--out", str(out_root / mode),
             "--no-timestamp",  # the sweep root is already timestamped
             "--tool-mode", args.tool_mode,
+            "--run-code", args.run_code,
         ], log=out_root / f"harness_{mode}.log", check=False)
         if rc != 0:
             raise SystemExit(f"harness failed for mode {mode}; see {out_root}/harness_{mode}.log")

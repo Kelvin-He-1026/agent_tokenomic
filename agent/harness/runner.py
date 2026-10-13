@@ -51,8 +51,10 @@ class Runner:
         adapter: AgentAdapter,
         out_dir: str | Path,
         session: str = "",
+        run_code: str = "",
     ):
         self.session = session or new_id("sess_")
+        self.run_code = run_code
         self.cfg = cfg
         self.adapter = adapter
         self.writer = TelemetryWriter(out_dir)
@@ -133,6 +135,7 @@ class Runner:
             proc_cpu_ms=_cpu_ms() - cpu_before,
             peak_rss_mb=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0,
             harness_version=self.cfg.harness_version,
+            run_code=self.run_code,
         )
         self.last_fixture_matches = registry.fixture_matches
         self._fold_in_llm_calls(record)

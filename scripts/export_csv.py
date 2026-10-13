@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 COLUMNS = [
     # identity
-    "run_id", "config_id", "run_dir", "framework", "framework_version",
+    "run_id", "config_id", "run_dir", "run_code", "framework", "framework_version",
     "architecture", "model_repo", "precision", "tp_size",
     "task_id", "repeat_idx", "run_order_idx", "is_first_in_dir",
     # outcome
@@ -127,6 +127,7 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
             "run_id": r["run_id"],
             "config_id": r["config_id"],
             "run_dir": run_dir.name,
+            "run_code": r.get("run_code", ""),
             "framework": cfg.get("framework", ""),
             "framework_version": cfg.get("framework_version", ""),
             "architecture": cfg.get("architecture", ""),
