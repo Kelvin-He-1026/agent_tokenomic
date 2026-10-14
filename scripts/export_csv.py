@@ -142,7 +142,7 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
             "status": r["status"],
             "error": r.get("error", "")[:200],
             "final_answer": " ".join(r.get("final_answer", "").split())[:500],
-            **_success(r),
+            **_success(r, [t["tool_name"] for t in tools]),
             **_judge(evals_by_run.get(r["run_id"], [])),
 
             "n_llm_calls": r["n_llm_calls"],
@@ -224,13 +224,13 @@ def _judge(evals: list[dict[str, Any]]) -> dict[str, Any]:
     return out
 
 
-def _success(r: dict[str, Any]) -> dict[str, Any]:
+def _success(r: dict[str, Any], tools_used: list[str]) -> dict[str, Any]:
     from agent.scoring import score
 
     task = TASKS.get(r["task_id"])
     if task is None:
         return {"task_type": "", "check_mode": "", "success": "", "success_detail": "task not found"}
-    s = score(r.get("final_answer", ""), task["answer_check"], r["status"])
+    s = score(r.get("final_answer", ""), task["answer_check"], r["status"], tools_used)
     return {
         "task_type": task.get("task_type", ""),
         "check_mode": s.mode,

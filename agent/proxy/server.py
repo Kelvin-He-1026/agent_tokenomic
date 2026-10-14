@@ -188,25 +188,30 @@ async def _stream(
 ):
     """Pass SSE chunks through untouched while timestamping the first one."""
     chunks: list[dict[str, Any]] = []
-    async with client.stream(
-        "POST", f"{UPSTREAM}/v1/chat/completions", content=body, headers=headers
-    ) as resp:
-        async for line in resp.aiter_lines():
-            if line.startswith("data: "):
-                blob = line[6:].strip()
-                if blob and blob != "[DONE]":
-                    if call.ttft_ms is None:
-                        call.ttft_ms = monotonic_ms() - started
-                    try:
-                        chunks.append(json.loads(blob))
-                    except json.JSONDecodeError:
-                        pass
-            yield (line + "\n\n").encode() if line else b"\n"
-
-    call.latency_ms = monotonic_ms() - started
-    merged = _merge_chunks(chunks)
-    _describe_response(call, merged)
-    _finish(call, merged, run_id, writer)
+    try:
+        async with client.stream(
+            "POST", f"{UPSTREAM}/v1/chat/completions", content=body, headers=headers
+        ) as resp:
+            async for line in resp.aiter_lines():
+                if line.startswith("data: "):
+                    blob = line[6:].strip()
+                    if blob and blob != "[DONE]":
+                        if call.ttft_ms is None:
+                            call.ttft_ms = monotonic_ms() - started
+                        try:
+                            chunks.append(json.loads(blob))
+                        except json.JSONDecodeError:
+                            pass
+                yield (line + "\n\n").encode() if line else b"\n"
+    finally:
+        # Also reached when the client closes the stream as soon as it has read
+        # [DONE], which cancels this generator at a yield. Without it the row
+        # is lost and inflight never returns to zero, so every later run waits
+        # out the flush timeout.
+        call.latency_ms = monotonic_ms() - started
+        merged = _merge_chunks(chunks)
+        _describe_response(call, merged)
+        _finish(call, merged, run_id, writer)
 
 
 def _describe_request(call: LlmCallRecord, payload: dict[str, Any]) -> None:

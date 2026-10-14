@@ -84,11 +84,16 @@ def main() -> int:
         raise SystemExit(f"unknown metrics {sorted(bad)}; choose from {METRICS}")
     tasks = {t["task_id"]: t for t in json.loads(Path(args.tasks).read_text())}
 
-    def selected(task: dict) -> bool:
+    def selected(task: dict, run: dict, tools_used: list[str]) -> bool:
         if args.select == "all":
             return True
         if args.select == "judge_only":
-            return task["answer_check"]["mode"] == "judge_only"
+            # Decided per run, not per task: a task with judge_if_tools is
+            # judged only for the runs that called an online tool.
+            verdict = deterministic_score(
+                run.get("final_answer", ""), task["answer_check"], run["status"], tools_used
+            )
+            return verdict.mode == "judge_only"
         return task.get("task_type") in args.select.split(",")
 
     # Work list: every (run, metric) not yet scored.
@@ -101,7 +106,8 @@ def main() -> int:
             tools_by_run.setdefault(t["run_id"], []).append(t)
         for run in read_jsonl(d / "run.jsonl"):
             task = tasks.get(run["task_id"])
-            if task is None or not selected(task):
+            used = [t["tool_name"] for t in tools_by_run.get(run["run_id"], [])]
+            if task is None or not selected(task, run, used):
                 continue
             case = build_case(d, run, tools_by_run.get(run["run_id"], []), task)
             for m in metrics:

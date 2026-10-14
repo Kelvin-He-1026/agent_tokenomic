@@ -26,6 +26,8 @@ agent/                   the package
 │   └── react_agent.py   Phase 1 architecture (Phase 2 adds judge_loop, router_judge)
 ├── openai_agents/       OpenAI Agents SDK runtime
 │   └── react_agent.py   Phase 1 architecture
+├── crewAI/              CrewAI runtime
+│   └── react_agent.py   Phase 1 architecture
 ├── proxy/
 │   ├── server.py        OpenAI-compatible logging proxy (source of LLM truth)
 │   └── mock_upstream.py scripted LLM server, so everything runs with no GPU
@@ -45,8 +47,8 @@ scripts/     start_stack.sh, stop_stack.sh, fetch_models.py, serve_vllm.sh,
              build_index.py, record_fixtures.py, parity_check.py
 ```
 
-Each runtime gets its own folder (`langGraph/`, `openai_agents/`, and later
-`crewAI/`), with one file per architecture inside it. `adapters/` holds only
+Each runtime gets its own folder (`langGraph/`, `openai_agents/`, `crewAI/`),
+with one file per architecture inside it. `adapters/` holds only
 what is runtime-neutral.
 
 ## Models are local
@@ -319,6 +321,19 @@ using each task's `answer_check`. It is the primary measure; an LLM judge
 
 A run that did not complete (`step_limit`, `truncated`, ...) is never a success.
 
+One rule keeps live web results out of the deterministic score. `tool_error`
+and `unanswerable` tasks carry `judge_if_tools: [web_search]`: a run that
+searched the web is left to the judge, like a `judge_only` task, because a
+question is only unanswerable if the search really returned nothing relevant.
+Runs that did not search keep the `abstain` check, so `check_mode` is decided
+per run, and `judge_runs.py --select judge_only` picks up exactly those runs.
+
+Calendar tasks stay deterministic. `fred_releases` computes its week from the
+frozen `as_of_date` and is replayed from two recorded responses, so "this week"
+is always 2026-04-06 to 04-10 whatever day the benchmark runs. Do not re-record
+those two fixtures: FRED revises past schedules, and the reference answers are
+written from this recording.
+
 The checks live in `dataset/reviewed_checks.json`, applied on top of the source
 tasks by `agent/dataset/build_tasks.py`. Two rules are enforced when building:
 
@@ -434,6 +449,35 @@ than patched around, so the SDK runs as shipped:
 The SDK names the output limit `max_tokens` where LangGraph sends
 `max_completion_tokens`; the adapter sends the latter, so that field matches.
 
+### Known residuals: CrewAI
+
+CrewAI builds its own prompt and offers no supported way to replace it: custom
+templates merge everything into a single user message, and `prompt_file` no
+longer reaches agent prompts (1.15). The adapter runs one agent through
+`Agent.kickoff`, the entry point closest to the other runtimes, and carries the
+shared system prompt in the role and backstory fields. Sampling settings and
+tool schemas match; these differences remain, checked against the mock upstream:
+
+| Residual | Effect |
+| --- | --- |
+| System message: one extra space after the first sentence, and a closing line `Your personal goal is: Answer the user's question.` | 52 more characters than the shared prompt; `parity_check.py` reports `system_prompt` as differing |
+| The question is sent as `\nCurrent Task: <question>` | A fixed prefix on the user message |
+| Every tool carries `"strict": true`, hard-coded | vLLM's default `--tool-strict-level auto` constrains the arguments of strict tools while decoding, so malformed tool calls may be rarer here for a reason that is not the framework's loop. Not yet measured |
+| Requests carry `tool_choice: "auto"` | The default, stated explicitly |
+| At the step budget CrewAI makes one more call without tools, asking for a final answer | `max_iter` is set to `max_llm_calls - 1`, so the total stays within the budget, but the run ends `completed` with an answer where LangGraph and the SDK end `step_limit`. The export's `hit_step_limit` column still flags it |
+| A call to a tool that does not exist gets CrewAI's own reply, `Tool not found` | LangGraph also answers the model; the SDK aborts the run |
+| Tool arguments that are not valid JSON are answered by CrewAI before the tool layer sees them | Not counted in `n_malformed_tool_calls` |
+
+A budget of one LLM call cannot be expressed in CrewAI and is reported as a
+`framework_error`. Switched off because the harness could not see them: tool
+result caching, agent retries, context-window summarising, console panels and
+telemetry.
+
+A Crew with a Task was not used: it appends "This is the expected criteria for
+your final answer ... you MUST return the actual complete content as the final
+answer, not a summary" to every question, which contradicts the shared prompt's
+instruction to answer concisely.
+
 ## Status
 
 - Working: config, telemetry, tool layer with record/replay, logging proxy,
@@ -443,7 +487,9 @@ The SDK names the output limit `max_tokens` where LangGraph sends
   upstream (matching LangGraph on status, LLM calls, tool calls and tokens),
   then run on the original 34 tasks against Qwen3.8-27B, Nemotron, Llama-3.1-8B
   and Llama-3.3-70B (run code `openAISDK-v1`).
-- Next: the CrewAI adapter; a cell with both frameworks interleaved; the
+- CrewAI ReAct agent: implemented and smoke-tested against the mock upstream
+  with all three frameworks (150 runs, all completed).
+- Next: a cell with all three frameworks interleaved; the
   hardware sampler (NVML + RAPL); the analysis notebook.
 - Dataset: 50 tasks in `dataset/tasks/phase1.json` — 20 deduplicated from the
   reference ground truth, 30 authored (no-tool, unanswerable, tool-error,

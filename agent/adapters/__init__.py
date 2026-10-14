@@ -14,9 +14,9 @@ def get_adapter(name: str, cfg: RunConfig) -> AgentAdapter:
 
         return LangGraphReActAgent(cfg)
     if name == "crewai":
-        from .crewai_agent import CrewAIAdapter
+        from ..crewAI.react_agent import CrewAIReActAgent
 
-        return CrewAIAdapter(cfg)
+        return CrewAIReActAgent(cfg)
     if name == "openai_agents":
         from ..openai_agents.react_agent import OpenAIAgentsReActAgent
 

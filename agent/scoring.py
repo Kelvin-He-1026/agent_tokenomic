@@ -15,6 +15,12 @@ noise. Four check modes, set per task in `answer_check`:
   judge_only         no stable ground truth (e.g. "the S&P 500 today"); not
                      scored here, left to the LLM judge
 
+Any check may also carry `judge_if_tools`: a list of tools whose results come
+from online sources. A run that called one of them is left to the judge like a
+judge_only task, because what it saw is not fixed: an "unanswerable" question
+is only unanswerable if the search really returned nothing relevant. Runs that
+did not call those tools keep the deterministic check.
+
 A run that did not complete (step_limit, truncated, ...) is never a success,
 whatever its partial answer happens to contain.
 """
@@ -83,12 +89,20 @@ def _numbers(text: str) -> list[float]:
     return out
 
 
-def score(answer: str, check: dict[str, Any], status: str = "completed") -> Score:
+def score(
+    answer: str,
+    check: dict[str, Any],
+    status: str = "completed",
+    tools_used: list[str] | None = None,
+) -> Score:
     mode = check.get("mode", "key_facts")
     params = check.get("params", {})
 
     if mode == "judge_only":
         return Score(None, mode, params.get("reason", "no stable ground truth"))
+    online = sorted(set(params.get("judge_if_tools", [])) & set(tools_used or []))
+    if online:
+        return Score(None, "judge_only", f"called {', '.join(online)}: left to the judge")
     if status != "completed":
         return Score(False, mode, f"run did not complete ({status})")
 

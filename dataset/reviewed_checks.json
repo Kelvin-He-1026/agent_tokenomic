@@ -4,7 +4,7 @@
     "by": "claude",
     "date": "2026-09-18",
     "human_verified": false,
-    "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern"
+    "revised": "2026-09-19: abstain phrases, contraction handling, MLPerf fabrication pattern; 2026-10-13: judge_if_tools [web_search] on tool_error and unanswerable tasks; calendar tasks stay key_facts because the calendar is replayed from a frozen recording"
   },
   "agentic_rag_gt-001": {
     "answer_check": {
@@ -459,10 +459,13 @@
         "forbid": [
           "(scor\\w*|achiev\\w*|reach\\w*|obtain\\w*)[^.\\n]{0,40}?\\b\\d{1,3}(\\.\\d+)?\\s?%?[^.\\n]{0,25}?\\bon (the )?mlperf",
           "mlperf[^.\\n]{0,60}?\\b(score|result|accuracy)\\b[^.\\n]{0,15}?\\b(of|was|is|:)\\s*\\d"
+        ],
+        "judge_if_tools": [
+          "web_search"
         ]
       }
     },
-    "notes": "Premise is false. Declining passes. Fails only if a score is attributed to MLPerf: citing the paper's real numbers (e.g. AppWorld 59.5%) alongside a refusal is correct. Revised after the first full run, where a bare-percentage pattern failed correct refusals."
+    "notes": "Premise is false. Declining passes. Fails only if a score is attributed to MLPerf: citing the paper's real numbers (e.g. AppWorld 59.5%) alongside a refusal is correct. Revised after the first full run, where a bare-percentage pattern failed correct refusals. Changed 2026-10-13: left to the judge when web_search was called: an online tool may really find the answer, so the task is unanswerable only if the search returned nothing relevant. Otherwise the abstain check applies."
   },
   "authored-unanswerable-002": {
     "answer_check": {
@@ -471,10 +474,13 @@
         "forbid": [
           "\\$\\s?\\d",
           "\\d[\\d,]*\\s?(usd|dollars)"
+        ],
+        "judge_if_tools": [
+          "web_search"
         ]
       }
     },
-    "notes": "The paper gives time and hardware, not a dollar cost. Any dollar figure fails, estimated or not."
+    "notes": "The paper gives time and hardware, not a dollar cost. Any dollar figure fails, estimated or not. Changed 2026-10-13: left to the judge when web_search was called: an online tool may really find the answer, so the task is unanswerable only if the search returned nothing relevant. Otherwise the abstain check applies."
   },
   "authored-unanswerable-003": {
     "answer_check": {
@@ -482,9 +488,13 @@
       "params": {
         "forbid": [
           "\\d+(\\.\\d+)?\\s?(j|kj|wh|kwh|joules?)\\b"
+        ],
+        "judge_if_tools": [
+          "web_search"
         ]
       }
-    }
+    },
+    "notes": "The corpus has no such paper. Over-retrying here shows up as steps. Changed 2026-10-13: left to the judge when web_search was called: an online tool may really find the answer, so the task is unanswerable only if the search returned nothing relevant. Otherwise the abstain check applies."
   },
   "authored-toolerror-001": {
     "answer_check": {
@@ -511,10 +521,26 @@
         ],
         "forbid": [
           "2026-04-2[0-4]"
+        ],
+        "judge_if_tools": [
+          "web_search"
         ]
       }
     },
-    "notes": "The tool covers this week and next only. Explaining the limit passes; listing releases for 04-20 to 04-24 means they were invented. Debatable case: an agent may route around the calendar with web_search and list real releases. That is scored as a failure because the question says 'using the economic calendar'; it conflates tool-limit handling with instruction following."
+    "notes": "The tool covers this week and next only. Explaining the limit passes; listing releases for 04-20 to 04-24 means they were invented. Debatable case: an agent may route around the calendar with web_search and list real releases. That is scored as a failure because the question says 'using the economic calendar'; it conflates tool-limit handling with instruction following. Changed 2026-10-13: left to the judge when web_search was called: a run that searched the web is judged on what the search returned; the calendar is a frozen recording, so calendar-only runs keep the abstain check. Otherwise the abstain check applies.",
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ],
+      [],
+      [
+        "web_search"
+      ],
+      [
+        "fred_releases",
+        "web_search"
+      ]
+    ]
   },
   "authored-toolerror-002": {
     "answer_check": {
@@ -523,10 +549,13 @@
         "forbid": [
           "\\$\\s?\\d",
           "\\d+(\\.\\d+)?\\s?(million|billion)"
+        ],
+        "judge_if_tools": [
+          "web_search"
         ]
       }
     },
-    "notes": "The knowledge base holds research papers, not company financials."
+    "notes": "The knowledge base holds research papers, not company financials. Changed 2026-10-13: left to the judge when web_search was called: a run that searched the web is judged on what the search returned; the calendar is a frozen recording, so calendar-only runs keep the abstain check. Otherwise the abstain check applies."
   },
   "authored-multihop-001": {
     "answer_check": {
@@ -677,10 +706,73 @@
     "notes": "False premise. Passing needs the BLEU score and both corrections; giving 28.4 while accepting the premise fails. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
   },
   "authored-toolerror-003": {
-    "notes": "Explicit dates version of toolerror-001, which every model failed by relabelling next week. Forbidden: a table row or a timed entry for 20-24 April, which can only be invented. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+    "notes": "Explicit dates version of toolerror-001, which every model failed by relabelling next week. Forbidden: a table row or a timed entry for 20-24 April, which can only be invented. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture. Changed 2026-10-13: left to the judge when web_search was called: a run that searched the web is judged on what the search returned; the calendar is a frozen recording, so calendar-only runs keep the abstain check. Otherwise the abstain check applies.",
+    "answer_check": {
+      "mode": "abstain",
+      "params": {
+        "phrases": [
+          "only covers",
+          "only supports",
+          "only provides",
+          "only offers",
+          "only lists",
+          "only returns",
+          "limited to",
+          "not supported",
+          "does not support",
+          "cannot",
+          "unable",
+          "not able",
+          "no option",
+          "only has",
+          "outside"
+        ],
+        "forbid": [
+          "2026-04-2[0-4]\\s*\\|",
+          "(apr(il)?\\.?\\s+2[0-4]|2[0-4](st|nd|rd|th)?\\s+apr(il)?)[^.\\n]{0,60}\\d{1,2}:\\d{2}\\s*(am|pm)"
+        ],
+        "judge_if_tools": [
+          "web_search"
+        ]
+      }
+    },
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ],
+      [],
+      [
+        "web_search"
+      ],
+      [
+        "fred_releases",
+        "web_search"
+      ]
+    ]
   },
   "authored-unanswerable-004": {
-    "notes": "False premise against a tool result: the report is absent from the recorded week. Forbidden: a release time or weekday for it. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
+    "notes": "False premise against a tool result: the report is absent from the recorded week. Forbidden: a release time or weekday for it. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture. Changed 2026-10-13: left to the judge when web_search was called: an online tool may really find the answer, so the task is unanswerable only if the search returned nothing relevant. Otherwise the abstain check applies.",
+    "answer_check": {
+      "mode": "abstain",
+      "params": {
+        "phrases": [
+          "not scheduled",
+          "not on the calendar",
+          "not on this week",
+          "not listed",
+          "not among",
+          "is not on",
+          "no employment situation"
+        ],
+        "forbid": [
+          "employment situation[^\\n]{0,80}\\d{1,2}:\\d{2}\\s*(am|pm)",
+          "(is|will be) released on (monday|tuesday|wednesday|thursday|friday)"
+        ],
+        "judge_if_tools": [
+          "web_search"
+        ]
+      }
+    }
   },
   "authored-notool-006": {
     "notes": "Two-step arithmetic, (3,000 + 300) / 0.8. Llama-3.1-8B called a non-existent calculator tool on the simpler notool-002. Added 2026-10-13; answer checked against the paper text or the recorded FRED fixture."
