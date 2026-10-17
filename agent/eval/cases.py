@@ -61,6 +61,7 @@ def build_case(run_dir: Path, run: dict[str, Any], tool_rows: list[dict[str, Any
         input=task["question"],
         actual_output=run.get("final_answer") or "",
         expected_output=task.get("reference_answer") or None,
+        context=[task["reference_context"]] if task.get("reference_context") else None,
         retrieval_context=outputs or None,
         tools_called=called or None,
         expected_tools=[ToolCall(name=n) for n in expected] or None,

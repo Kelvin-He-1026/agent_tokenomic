@@ -1,0 +1,185 @@
+{
+  "note": "CPU-only source-presence smoke checks of12 representative evidence queries against the unchanged frozen index. These do not certify complete answer-bearing evidence, minimum query depth, or model difficulty.",
+  "results": [
+    {
+      "query": "DRAGIN evaluation datasets HotpotQA 2WikiMultihopQA IIRC StrategyQA",
+      "expected_sources": [
+        "Dynamic RAG by TsinguaU.pdf"
+      ],
+      "returned_sources": [
+        "Dynamic RAG by TsinguaU.pdf",
+        "Dynamic RAG by TsinguaU.pdf",
+        "Dynamic RAG by TsinguaU.pdf",
+        "HOTPOTQA ADataset for Diverse.pdf",
+        "Dynamic RAG by TsinguaU.pdf"
+      ],
+      "expected_source_present": true,
+      "result_characters": 4658
+    },
+    {
+      "query": "HotpotQA original paper data split train-easy train-medium train-hard total valid examples",
+      "expected_sources": [
+        "HOTPOTQA ADataset for Diverse.pdf"
+      ],
+      "returned_sources": [
+        "HOTPOTQA ADataset for Diverse.pdf",
+        "HOTPOTQA ADataset for Diverse.pdf",
+        "Agentic Context Engineering.pdf",
+        "HOTPOTQA ADataset for Diverse.pdf",
+        "HOTPOTQA ADataset for Diverse.pdf"
+      ],
+      "expected_source_present": true,
+      "result_characters": 5161
+    },
+    {
+      "query": "Attention Is All You Need Table 3 base big parameters 65 213",
+      "expected_sources": [
+        "Attention Is All You Need.pdf"
+      ],
+      "returned_sources": [
+        "Attention Is All You Need.pdf",
+        "Dynamic RAG by TsinguaU.pdf",
+        "HOTPOTQA ADataset for Diverse.pdf",
+        "Attention Is All You Need.pdf",
+        "Attention Is All You Need.pdf"
+      ],
+      "expected_source_present": true,
+      "result_characters": 5137
+    },
+    {
+      "query": "Transformer Table 2 English German test BLEU training cost FLOPs",
+      "expected_sources": [
+        "Attention Is All You Need.pdf"
+      ],
+      "returned_sources": [
+        "Attention Is All You Need.pdf",
+        "Attention Is All You Need.pdf",
+        "Attention Is All You Need.pdf",
+        "Attention Is All You Need.pdf",
+        "Attention Is All You Need.pdf"
+      ],
+      "expected_source_present": true,
+      "result_characters": 5066
+    },
+    {
+      "query": "ManuRAG Table 3 context precision recall MCQ MathQ RQ",
+      "expected_sources": [
+        "ManuRAG.pdf"
+      ],
+      "returned_sources": [
+        "ManuRAG.pdf",
+        "ManuRAG.pdf",
+        "ManuRAG.pdf",
+        "ManuRAG.pdf",
+        "ManuRAG.pdf"
+      ],
+      "expected_source_present": true,
+      "result_characters": 4725
+    },
+    {
+      "query": "ManuRAG Table 1 factual correctness semantic similarity MathQ MCQ RQ",
+      "expected_sources": [
+        "ManuRAG.pdf"
+      ],
+      "returned_sources": [
+        "ManuRAG.pdf",
+        "ManuRAG.pdf",
+        "ManuRAG.pdf",
+        "ManuRAG.pdf",
+        "ManuRAG.pdf"
+      ],
+      "expected_source_present": true,
+      "result_characters": 4191
+    },
+    {
+      "query": "DRAGIN Table 2 Llama2-13b-chat HotpotQA StrategyQA exact match",
+      "expected_sources": [
+        "Dynamic RAG by TsinguaU.pdf"
+      ],
+      "returned_sources": [
+        "Dynamic RAG by TsinguaU.pdf",
+        "Dynamic RAG by TsinguaU.pdf",
+        "Dynamic RAG by TsinguaU.pdf",
+        "Dynamic RAG by TsinguaU.pdf",
+        "Dynamic RAG by TsinguaU.pdf"
+      ],
+      "expected_source_present": true,
+      "result_characters": 5082
+    },
+    {
+      "query": "DRAGIN Table 3 frequency retrieval activation L13B HotpotQA",
+      "expected_sources": [
+        "Dynamic RAG by TsinguaU.pdf"
+      ],
+      "returned_sources": [
+        "Dynamic RAG by TsinguaU.pdf",
+        "Dynamic RAG by TsinguaU.pdf",
+        "Dynamic RAG by TsinguaU.pdf",
+        "Attention Is All You Need.pdf",
+        "Dynamic RAG by TsinguaU.pdf"
+      ],
+      "expected_source_present": true,
+      "result_characters": 5210
+    },
+    {
+      "query": "ACE Table 1 offline online AppWorld GT labels TGC SGC",
+      "expected_sources": [
+        "Agentic Context Engineering.pdf"
+      ],
+      "returned_sources": [
+        "Agentic Context Engineering.pdf",
+        "Agentic Context Engineering.pdf",
+        "Agentic Context Engineering.pdf",
+        "Agentic Context Engineering.pdf",
+        "Agentic Context Engineering.pdf"
+      ],
+      "expected_source_present": true,
+      "result_characters": 4369
+    },
+    {
+      "query": "ACE Table 4 cost speed analysis latency rollouts 9517 53898",
+      "expected_sources": [
+        "Agentic Context Engineering.pdf"
+      ],
+      "returned_sources": [
+        "Agentic Context Engineering.pdf",
+        "Agentic Context Engineering.pdf",
+        "Agentic Context Engineering.pdf",
+        "Agentic Context Engineering.pdf",
+        "Agentic Context Engineering.pdf"
+      ],
+      "expected_source_present": true,
+      "result_characters": 4718
+    },
+    {
+      "query": "HotpotQA joint F1 joint exact match supporting facts precision recall",
+      "expected_sources": [
+        "HOTPOTQA ADataset for Diverse.pdf"
+      ],
+      "returned_sources": [
+        "HOTPOTQA ADataset for Diverse.pdf",
+        "HOTPOTQA ADataset for Diverse.pdf",
+        "HOTPOTQA ADataset for Diverse.pdf",
+        "HOTPOTQA ADataset for Diverse.pdf",
+        "Agentic Context Engineering.pdf"
+      ],
+      "expected_source_present": true,
+      "result_characters": 5069
+    },
+    {
+      "query": "DRAGIN RIND semantic indicator stopwords threshold QFS attention original order",
+      "expected_sources": [
+        "Dynamic RAG by TsinguaU.pdf"
+      ],
+      "returned_sources": [
+        "Dynamic RAG by TsinguaU.pdf",
+        "Dynamic RAG by TsinguaU.pdf",
+        "Dynamic RAG by TsinguaU.pdf",
+        "Dynamic RAG by TsinguaU.pdf",
+        "Dynamic RAG by TsinguaU.pdf"
+      ],
+      "expected_source_present": true,
+      "result_characters": 5047
+    }
+  ]
+}

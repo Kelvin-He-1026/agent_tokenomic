@@ -1,0 +1,11 @@
+{
+  "fixture_id": "1217bf1fc0de7fef",
+  "tool": "web_search",
+  "args": {
+    "query": "DRAGIN multi-hop evaluations dataset distractor full-wiki test counts original paper"
+  },
+  "normalized_key": "web_search|query=count dataset distractor dragin evaluation full hop multi original paper test wiki",
+  "result": "Summary: The sources do not provide specific information regarding the DRAGIN multi-hop evaluations dataset distractor full-wiki test counts as detailed in the original paper. The provided links either require JavaScript to be enabled to access the content or do not contain relevant information. Additionally, the GitHub repository mentioned does not contain details about the dataset or test counts. Therefore, no definitive answer can be given based on the available sources.\n\nSources:\n\n1. PDF\n   URL: https://www.semanticscholar.org/paper/92dd7d111e2fa0a18cc384bd2fca04a2fcb9247e\n   JavaScript is disabled. In order to continue, we need to verify that you're not a robot. This requires JavaScript. Enable JavaScript and then reload the page.\n\n2. Untitled\n   URL: https://www.semanticscholar.org/paper/f26b4f7a28470919071850ed216f7a98bb27e4fb\n   JavaScript is disabled. In order to continue, we need to verify that you're not a robot. This requires JavaScript. Enable JavaScript and then reload the page.\n\n3. https://dblp.org/rec/journals/corr/abs-2505-01180\n   URL: https://dblp.org/rec/journals/corr/abs-2505-01180\n   No information is available for this page.Learn why\n\n4. https://ui.adsabs.harvard.edu/link_gateway/2022RAA...\n   URL: https://ui.adsabs.harvard.edu/link_gateway/2022RAA....22f5014Z/doi:10.48550/arXiv.2202.08439\n   No information is available for this page.Learn why\n\n5. eugenelin1/DRA\n   URL: https://github.com/eugenelin1/DRA\n   A deep adversarial variational autoencoder model for dimensionality reduction in single-cell RNA sequencing analysis. The Zeisel dataset consists of 3,005",
+  "recorded_at": "2026-10-16T19:47:49.481894+00:00",
+  "recorded_by": "langgraph/nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16"
+}

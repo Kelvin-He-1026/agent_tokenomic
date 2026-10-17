@@ -1,0 +1,103 @@
+{
+  "source_sha256": "b9682c65e3cc2278e3b5710c57f5c744e4ebb3e9815c13a011c4f1ebec29191d",
+  "scorer_sha256": "bda2fa82e573308f7b21352c56ce1373f29e78c03bb39981fb865db07318da58",
+  "note": "Answer-score probes only. ToolCorrectness and other LLM-judge metrics are separate; these probes do not claim to bypass them.",
+  "probes": [
+    {
+      "task_id": "authored-multitool-002",
+      "answer": "Repeated rewriting degrades the context into shorter summaries.",
+      "tools_used": [],
+      "expected_answer_success": false,
+      "actual": {
+        "success": true,
+        "mode": "key_facts",
+        "detail": "2/2 facts (need 2)"
+      },
+      "explanation": "The requested web half is absent."
+    },
+    {
+      "task_id": "authored-multihop-011",
+      "answer": "ManuRAG4 is text-only with no image database; ManuRAG2 converts figures and tables into descriptive text.",
+      "tools_used": [],
+      "expected_answer_success": false,
+      "actual": {
+        "success": true,
+        "mode": "key_facts",
+        "detail": "2/2 facts (need 2)"
+      },
+      "explanation": "The variant-to-property relations are reversed."
+    },
+    {
+      "task_id": "authored-multihop-013",
+      "answer": "2026-04-09: Manufacturer sales release; 2026-04-16: G.17 Industrial Production.",
+      "tools_used": [],
+      "expected_answer_success": false,
+      "actual": {
+        "success": true,
+        "mode": "key_facts",
+        "detail": "3/3 facts (need 3)"
+      },
+      "explanation": "The second date is attached to a different release; the repeated release was not identified."
+    },
+    {
+      "task_id": "agentic_rag_gt-014",
+      "answer": "Industrial production and the Employment Situation jobs report are both scheduled next week.",
+      "tools_used": [],
+      "expected_answer_success": false,
+      "actual": {
+        "success": true,
+        "mode": "key_facts",
+        "detail": "1/1 facts (need 1)"
+      },
+      "explanation": "The jobs release is fabricated relative to the recorded watchlist."
+    },
+    {
+      "task_id": "authored-multihop-009",
+      "answer": "The ratio is 74.5, rounded to the nearest whole number.",
+      "tools_used": [],
+      "expected_answer_success": false,
+      "actual": {
+        "success": true,
+        "mode": "numeric_tolerance",
+        "detail": "want 74.5\u00b10.6, found [74.5]"
+      },
+      "explanation": "The answer violates the integer rounding requirement."
+    },
+    {
+      "task_id": "authored-multihop-003",
+      "answer": "90,564 is incorrect; the answer is 90,000.",
+      "tools_used": [],
+      "expected_answer_success": false,
+      "actual": {
+        "success": true,
+        "mode": "numeric_tolerance",
+        "detail": "want 90564\u00b10, found [90564.0, 90000.0]"
+      },
+      "explanation": "The correct number appears only as a rejected claim."
+    },
+    {
+      "task_id": "authored-toolerror-001",
+      "answer": "The requested dates are 2026-04-20 to 2026-04-24. The calendar only covers this week and next week, so that window is not available.",
+      "tools_used": [],
+      "expected_answer_success": true,
+      "actual": {
+        "success": false,
+        "mode": "abstain",
+        "detail": "fabricated: matched /2026-04-2[0-4]/"
+      },
+      "explanation": "This is a correct limitation explanation, including the requested dates."
+    },
+    {
+      "task_id": "authored-unanswerable-003",
+      "answer": "No relevant evidence was retrieved, so I cannot find the requested figure.",
+      "tools_used": [],
+      "expected_answer_success": null,
+      "actual": {
+        "success": true,
+        "mode": "abstain",
+        "detail": "declined via 'cannot find'"
+      },
+      "explanation": "Answer checker accepts a generic refusal without any tool evidence; the absence claim cannot be established from this trajectory."
+    }
+  ]
+}

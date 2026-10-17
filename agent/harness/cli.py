@@ -22,7 +22,7 @@ from pathlib import Path
 from ..adapters import FRAMEWORKS, get_adapter
 from ..env import load_env
 from ..config import RunConfig
-from ..telemetry import file_stamp
+from ..telemetry import PlanRecord, file_stamp
 from .runner import Runner, Task
 
 
@@ -239,6 +239,21 @@ def select_tasks(tasks: list[Task], limit: int) -> list[Task]:
     return sorted(picked, key=lambda t: order[id(t)])
 
 
+def select_per_difficulty(tasks: list[Task], per_level: int) -> list[Task]:
+    """`per_level` tasks from each difficulty level, for a trial run.
+
+    Within a level, the same round-robin across task types as select_tasks,
+    so 5 easy / 5 medium / 5 hard still covers the task types. A level with
+    fewer tasks contributes all of them.
+    """
+    by_level: dict[str, list[Task]] = {}
+    for t in tasks:
+        by_level.setdefault(t.raw.get("difficulty", "unknown"), []).append(t)
+    picked = [t for level in by_level.values() for t in select_tasks(level, per_level)]
+    order = {id(t): i for i, t in enumerate(tasks)}
+    return sorted(picked, key=lambda t: order[id(t)])
+
+
 def build_plan(tasks: list[Task], frameworks: list[str], repeats: int, seed: int):
     """(task, repeat, framework) triples, interleaved and shuffled within task."""
     plan = []
@@ -274,6 +289,15 @@ def main() -> int:
     )
     ap.add_argument("--limit", type=int, default=0,
                     help="sample N tasks, spread across task types (0 = all tasks)")
+    ap.add_argument("--stack", default=None, choices=["a", "b"],
+                    help="serving stack (agent/stacks.py): its proxy port, and this process "
+                         "pinned to its GPU's NUMA node; default $ATK_STACK, else the single stack")
+    ap.add_argument("--base-url", default="",
+                    help="proxy to use instead of the config's (or the stack's); provenance only, "
+                         "not part of config_id. Used by parallel recording workers")
+    ap.add_argument("--per-difficulty", type=int, default=0,
+                    help="trial run: N tasks from each difficulty level (e.g. 5 -> 5 easy, "
+                         "5 medium, 5 hard), spread across task types; overrides --limit")
     ap.add_argument(
         "--tool-mode",
         choices=["replay", "record", "live"],
@@ -291,13 +315,34 @@ def main() -> int:
     cfg = RunConfig.from_yaml(args.config)
     if args.tool_mode:
         cfg = replace(cfg, tool_mode=args.tool_mode)
+    from .. import stacks
+
+    stack = stacks.get(args.stack)
+    if stack.name:
+        # Pinned before the embedding model loads, so its threads stay on the
+        # node next to this stack's GPU.
+        stacks.pin_current_process(stack)
+        cfg = replace(cfg, base_url=stack.proxy_url, hardware_id=stack.hardware_id,
+                      numa_pinning=stack.numa_pinning)
+        print(f"stack {stack.name}: proxy {stack.proxy_url}, {stack.hardware_id}, "
+              f"pinned to NUMA {stack.numa_pinning}")
+    if args.base_url:
+        cfg = replace(cfg, base_url=args.base_url)
     if cfg.tool_mode != "replay":
         print(f"!! tool_mode={cfg.tool_mode}: tools hit live APIs, so tool latency "
               f"and content are NOT comparable across runs")
-    tasks = select_tasks(Task.load_all(args.tasks), args.limit)
+    all_tasks = Task.load_all(args.tasks)
+    if args.per_difficulty:
+        tasks = select_per_difficulty(all_tasks, args.per_difficulty)
+    else:
+        tasks = select_tasks(all_tasks, args.limit)
     mix: dict[str, int] = {}
     for t in tasks:
         mix[t.raw.get("task_type", "unknown")] = mix.get(t.raw.get("task_type", "unknown"), 0) + 1
+    levels: dict[str, int] = {}
+    for t in tasks:
+        levels[t.raw.get("difficulty", "unknown")] = levels.get(t.raw.get("difficulty", "unknown"), 0) + 1
+    print("by difficulty: " + ", ".join(f"{k}={v}" for k, v in levels.items()))
     print(f"{len(tasks)} task(s): " + ", ".join(f"{k}={v}" for k, v in sorted(mix.items())))
 
     frameworks = [f.strip() for f in args.frameworks.split(",") if f.strip()]
@@ -341,6 +386,9 @@ def main() -> int:
     print(f"warmed retrieval in {warm_ms:.0f}ms")
 
     plan = build_plan(tasks, frameworks, args.repeats, args.seed)
+    for idx, (task, repeat, framework) in enumerate(plan):
+        runner = runners[framework]
+        runner.writer.write(PlanRecord(session, runner.config_id, task.task_id, repeat, idx))
     print(f"{len(plan)} runs -> {args.out}"
           + (f"  (run code: {args.run_code})" if args.run_code else ""))
     print(f"prompt_hash={list(runners.values())[0].prompt_hash} "

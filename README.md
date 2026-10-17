@@ -280,6 +280,93 @@ the pip CUDA wheels, the venv is put on `PATH` for `ninja`,
 `--max-num-seqs 256` fits the hybrid Mamba cache blocks, and
 `VLLM_USE_FLASHINFER_SAMPLER=0` avoids a JIT toolchain mismatch.
 
+### Tensor parallelism (TP)
+
+TP is a serving setting, so it lives in the config: `model.tp_size`, part of
+the cell and its `config_id`, launched by `serve_vllm.sh` and checked by
+preflight like the parsers. To make a TP variant of a cell:
+
+```bash
+.venv/bin/python scripts/make_cell.py --base configs/pilot_qwen.yaml --tp-size 2
+# -> configs/pilot_qwen_tp2.yaml; checks GPU count and that head counts divide evenly
+nohup ./scripts/serve_vllm.sh --config configs/pilot_qwen_tp2.yaml > /tmp/vllm_serve.log 2>&1 &
+```
+
+Then run, judge and export it like any other cell. A sweep takes
+`--tp-size 2`, applied to every mode. TP=2 uses both GPUs, so it runs with no
+stack and nothing alongside it (both the sweep and `serve_vllm.sh` refuse
+otherwise).
+
+The GPUs are on different sockets without NVLink, so each layer's all-reduce
+crosses PCIe and the socket link. Even so, one request at a time is limited by
+memory bandwidth, and TP=2 doubles it: a first check with Qwen3.8-27B on three
+phase1-v2 tasks gave 21.0 ms per output token against 37.5 ms at TP=1, and runs
+finished in 17.3 s against 29.7 s (medians; a small sample). TP=2 changes the
+cell, so compare it with TP=1 as a variable, not as a drop-in.
+
+### Two stacks at once (one per GPU)
+
+The two GPUs sit on different sockets with no NVLink, so tensor parallelism
+across them slows each token and changes the measured cell. Instead each GPU
+can carry its own independent stack, so two cells run at the same time while
+each stays at concurrency 1. Defined in `agent/stacks.py`:
+
+| Stack | GPU | NUMA node (cores) | vLLM | Proxy |
+| --- | --- | --- | --- | --- |
+| `a` | 0 | 1 (43-85) | 8000 | 8100 |
+| `b` | 1 | 3 (129-171) | 8001 | 8101 |
+| none | all | unpinned | 8000 | 8100 |
+
+Set `ATK_STACK=a` or `b` for the shell scripts, and pass `--stack a|b` to the
+harness and the sweep. vLLM, the proxy and the harness (with its CPU
+embedding model) are then pinned to the GPU's NUMA node.
+
+```bash
+# stack b: serve, proxy, run
+ATK_STACK=b nohup ./scripts/serve_vllm.sh --config configs/pilot_llama8b.yaml > /tmp/vllm_serve_b.log 2>&1 &
+ATK_STACK=b LOG=/tmp/vllm_serve_b.log ./scripts/wait_ready.sh
+ATK_STACK=b ./scripts/start_stack.sh
+.venv/bin/python -m agent.harness.cli --stack b --config configs/pilot_llama8b.yaml ...
+ATK_STACK=b ./scripts/stop_stack.sh --all     # stops stack b only
+
+# or a whole sweep on stack b, alongside one on stack a
+.venv/bin/python scripts/sweep_thinking.py --stack b --base-config configs/pilot_qwen.yaml ...
+```
+
+- A config with `tp_size: 2` (the 70B) needs both GPUs and is refused on a
+  stack; run it with no stack, alone.
+- Stack `a` and no stack use the same GPU and ports, so do not mix them.
+- Each run records `hardware_id` (`gpu1`) and `numa_pinning` (`node3`). The
+  proxy address is provenance too, so the same cell has the same `config_id`
+  on either stack.
+- `./scripts/status.sh` shows both stacks. Two sweeps hold separate locks
+  (`output/.sweep.lock`, `output/.sweep_b.lock`).
+
+## Power and hardware use
+
+`scripts/power_sampler.py` records GPU power and energy (NVML: the driver's own
+energy counter, so energy between two moments is exact), SM utilisation, VRAM,
+and CPU busy fraction per NUMA node, every 100 ms, on the same wall clock as the
+runs. `scripts/attribute_energy.py` then splits each run into LLM time (a
+request with vLLM), tool time (retrieval, replayed web results) and
+orchestration, with energy and utilisation per phase:
+
+```bash
+setsid nohup .venv/bin/python -u scripts/power_sampler.py --until-pid <driver pid> \
+    > /dev/null 2>&1 < /dev/null &          # -> output/power/power_<stamp>.jsonl
+.venv/bin/python scripts/attribute_energy.py --runs "output/runs/<sweep>/*" \
+    --idle-w 88 --out output/energy.csv     # idle: per-GPU W with the model loaded, no requests
+```
+
+CPU power needs Intel RAPL, which is root-only here. To let the sampler read it
+until the next reboot: `sudo chmod o+r /sys/class/powercap/intel-rapl:*/energy_uj`.
+Without it, CPU energy columns stay empty and only CPU utilisation is recorded.
+
+Per-run splits are only meaningful when runs do not overlap: parallel recording
+(`--workers`) runs several at once, so `overlap_runs` > 0 there and only totals
+are usable. Tool calls carry a `start_ts` from 2026-10-16 on; older runs have
+tool time folded into orchestration.
+
 ## Results
 
 `export_csv.py` joins the four JSONL tables into one row per run, 62 columns:
@@ -308,18 +395,71 @@ daylight saving) whatever the machine's clock is set to, from
 
 ## Scoring: did the agent succeed?
 
-`agent/scoring.py` decides success deterministically from the final answer,
-using each task's `answer_check`. It is the primary measure; an LLM judge
-(DeepEval) is secondary. Four modes:
+`agent/scoring.py` supplies deterministic content checks. `agent/evaluation.py`
+combines them with the dedicated semantic-correctness judge into one quality
+result for all tasks. Five answer-check modes:
 
 | Mode | Success when | Used for |
 | --- | --- | --- |
 | `key_facts` | at least `min_hits` facts appear; each fact may list alternatives, so paraphrase passes | corpus and FRED tasks |
 | `numeric_tolerance` | a number in the answer is within tolerance, matched on number boundaries | arithmetic tasks |
+| `structured` | every typed JSON field matches its gold value, tolerance, alias, and collection ordering | Phase 1 v2 selections, calculations, and evidence-sufficiency decisions |
 | `abstain` | the answer declines, and no `forbid` pattern (an invented figure) matches | unanswerable and out-of-scope tasks |
-| `judge_only` | not scored here: no stable ground truth | time-sensitive web questions |
+| `judge_only` | scored by the semantic judge | time-sensitive web questions and open-ended explanations |
 
-A run that did not complete (`step_limit`, `truncated`, ...) is never a success.
+Phase 1 v2 retains **25 easy / 50 medium / 25 hard**, with **80 deterministic / 20
+semantic** checks. All tasks carry the `phase1-v2-p0-1` evaluation policy.
+
+- `semantic_correct` measures the requested conclusions, independently of format
+  and termination. `format_ok` measures JSON shape or numeric serialization.
+- `success` requires correct content and completed execution. `format_success`
+  additionally requires format compliance. Under outcome policy `phase1-v2-p0-2`,
+  `strict_success` also requires natural completion; forced finalization, step
+  limits and truncation never count as strict successes.
+- Correct structured fields in surrounding prose, unambiguous quoted numbers,
+  and numeric strings can receive content credit while failing format checks.
+  Wrong values still fail content. Unparseable or ambiguous deterministic content
+  is `unscorable_format`: content unknown and an explicit unsuccessful outcome,
+  without adding paid judge calls. Legacy task checks retain their behavior.
+- Semantic tasks use `semantic_correctness`, with a 0.8 threshold and instructions
+  to ignore presentation. Missing/stale judgments remain `pending_judge`.
+  Faithfulness and task completion remain diagnostic metrics.
+
+Judge-only runs always include `semantic_correctness`, even when an older
+command explicitly requests only diagnostic metrics; `--diagnostics-only` is
+the explicit opt-out. The judge records `semantic-correctness-v1` and validates
+the normalized 0–1 score, threshold and pass flag. DeepEval's raw 0–10 score is
+normalized before applying the inclusive 0.8 threshold. Legacy task-completion
+scores cannot fill a semantic slot.
+
+`output_cap_reached` is the union of `per_call_output_cap_reached` and
+`total_output_cap_reached` (plus unknown length terminations). Export reconstructs
+these from call telemetry, so old total-only flags do not hide per-call
+truncation. `completion_type` separates natural completion, forced final,
+step limit and truncation; `hit_step_limit` now denotes step-limit status only.
+
+The shared proxy enforces the frozen config's call cap and per-call output cap.
+`limits.max_total_output_tokens` optionally supplies a tighter run ceiling; zero
+means `max_llm_calls * sampling.max_tokens`. Thinking tokens count as output.
+Every admitted generation request consumes a call, including failed requests
+and forced finalization. Rejections are recorded separately. A valid final stop
+on the last permitted call may complete; `length` is truncation. CrewAI's forced
+final response is subject to the same rule and retains a separate marker.
+
+Restart the proxy before new runs: the runner requires a `proxy-v1` budget
+acknowledgment. New telemetry records framework status, canonical termination,
+budget limits, cap flags, missing usage, and blocked requests. Config hashes
+include the accounting policy. An elapsed task timeout is classified consistently
+and blocks subsequent model requests; in-progress tools/requests are not forcibly
+preempted. Different budgets or accounting policies are separate comparison cells.
+
+The harness writes `plan.jsonl` before execution and fingerprints task definitions.
+Export writes a companion `.quality.json` report with planned/observed/missing
+runs, dataset coverage and pending judgments. Failed and pending runs retain their
+agent costs. An interrupted or partially judged run set cannot be labeled a
+complete 100-task benchmark. See
+[`dataset/reviews/phase1_v2_p0.md`](dataset/reviews/phase1_v2_p0.md) for the full
+contract and commands. Original `phase1.json` is unchanged.
 
 One rule keeps live web results out of the deterministic score. `tool_error`
 and `unanswerable` tasks carry `judge_if_tools: [web_search]`: a run that
@@ -364,22 +504,26 @@ Rebuild the task set after editing any source:
 
 ## LLM judge: DeepEval, judged by Claude via Claude Code
 
-The deterministic scorer is primary. DeepEval adds what string matching cannot
-judge: faithfulness to tool output, task completion, tool and argument choice.
+DeepEval supplies semantic correctness for judge-only tasks, plus optional
+diagnostics for faithfulness, task completion, tool and argument choice.
 It scores **stored runs offline**. Runs are never re-executed, and each test
 case is built from the proxy's request bodies and the tool layer's rows
 (`agent/eval/cases.py`), so every framework is judged from identical input.
 
 ```bash
 .venv/bin/python scripts/judge_runs.py --runs "output/runs/thinking_sweep_*/*" \
-    --select judge_only --metrics faithfulness,task_completion   # --dry-run to preview
+    --select judge_only --metrics semantic_correctness,faithfulness   # --dry-run to preview
 ```
 
 `--select` takes `judge_only`, `all`, or task types. Results go to each run
-directory's `eval.jsonl`, and the pass is resumable: already-scored pairs are
+directory's `eval.jsonl`, and the pass is resumable: already-scored run/metric/judge/answer-fingerprint entries are
 skipped, so a run stopped by usage limits continues where it left off. The CSV
 export adds `judge_<metric>` and `judge_<metric>_pass` columns, plus what judging
 each run cost (`judge_calls`, `judge_input_tokens`, `judge_output_tokens`).
+Use `--tasks dataset/tasks/phase1_v2.json` at judging and export. Old
+`task_completion` scores do not substitute for the new semantic metric.
+With multiple stored semantic judges, export requires `--judge-id` to select
+the primary judge rather than mixing judges across runs.
 
 **The judge runs on a Claude subscription**, through Claude Code's headless mode
 (`agent/eval/claude_code_judge.py`), with no API key. Each call is isolated
@@ -464,7 +608,7 @@ tool schemas match; these differences remain, checked against the mock upstream:
 | The question is sent as `\nCurrent Task: <question>` | A fixed prefix on the user message |
 | Every tool carries `"strict": true`, hard-coded | vLLM's default `--tool-strict-level auto` constrains the arguments of strict tools while decoding, so malformed tool calls may be rarer here for a reason that is not the framework's loop. Not yet measured |
 | Requests carry `tool_choice: "auto"` | The default, stated explicitly |
-| At the step budget CrewAI makes one more call without tools, asking for a final answer | `max_iter` is set to `max_llm_calls - 1`, so the total stays within the budget, but the run ends `completed` with an answer where LangGraph and the SDK end `step_limit`. The export's `hit_step_limit` column still flags it |
+| At its iteration budget CrewAI requests a forced final answer | `max_iter = max_llm_calls - 1`; the proxy enforces the same total cap. A valid stop within budget can complete; forced finalization remains visible in `forced_final_answer`, `completion_type` and `termination_reason`, and is excluded from `strict_success`. |
 | A call to a tool that does not exist gets CrewAI's own reply, `Tool not found` | LangGraph also answers the model; the SDK aborts the run |
 | Tool arguments that are not valid JSON are answered by CrewAI before the tool layer sees them | Not counted in `n_malformed_tool_calls` |
 

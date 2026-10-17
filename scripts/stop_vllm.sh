@@ -10,11 +10,15 @@
 #   ./scripts/stop_vllm.sh            # port 8000
 #   PORT=8001 ./scripts/stop_vllm.sh
 set -uo pipefail
-PORT=${PORT:-8000}
+eval "$(cd "$(dirname "$0")/.." && .venv/bin/python -m agent.stacks --shell)" || exit 1
+PORT=${PORT:-$VLLM_PORT}
+# With a stack, only its own GPU is checked: the other stack's server is not
+# this script's business and must not count as "still holding the GPU".
+GPU_SEL=${STACK_GPUS:+-i $STACK_GPUS}
 WAIT_S=${WAIT_S:-30}
 
-gpu_pids() { nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | tr -d ' '; }
-gpu_used() { nvidia-smi --query-gpu=memory.used --format=csv,noheader 2>/dev/null | paste -sd' '; }
+gpu_pids() { nvidia-smi $GPU_SEL --query-compute-apps=pid --format=csv,noheader 2>/dev/null | tr -d ' '; }
+gpu_used() { nvidia-smi $GPU_SEL --query-gpu=memory.used --format=csv,noheader 2>/dev/null | paste -sd' '; }
 
 pid=$(ss -lptn "sport = :$PORT" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1 || true)
 if [[ -z "${pid:-}" ]]; then

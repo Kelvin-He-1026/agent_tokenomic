@@ -76,6 +76,18 @@ class CrewAIReActAgent:
     def __init__(self, cfg: RunConfig):
         self.cfg = cfg
 
+    def forced_final_markers(self) -> list[str]:
+        """Let the proxy identify the installed framework's actual wire prompt.
+
+        New CrewAI executors append it to a copy of the messages, so it may
+        never appear in output.messages. Iteration counts cannot establish it.
+        """
+        try:
+            from crewai.utilities.i18n import I18N_DEFAULT
+            return [I18N_DEFAULT.errors("force_final_answer")]
+        except ImportError:
+            return []
+
     def framework_version(self) -> str:
         try:
             from importlib.metadata import version

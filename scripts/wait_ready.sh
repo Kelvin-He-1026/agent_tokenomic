@@ -9,11 +9,12 @@
 #   PORT=8100 ./scripts/wait_ready.sh       # the proxy instead
 #   ./scripts/serve_vllm.sh ... & ./scripts/wait_ready.sh && <run the benchmark>
 set -uo pipefail
-PORT=${PORT:-8000}
+eval "$(cd "$(dirname "$0")/.." && .venv/bin/python -m agent.stacks --shell)" || exit 1
+PORT=${PORT:-$VLLM_PORT}
 TIMEOUT_S=${TIMEOUT_S:-600}
 LOG=${LOG:-/tmp/vllm_serve.log}
 URL="http://127.0.0.1:${PORT}/v1/models"
-[[ "$PORT" == "8100" ]] && URL="http://127.0.0.1:${PORT}/control/health"
+[[ "$PORT" == "$PROXY_PORT" ]] && URL="http://127.0.0.1:${PORT}/control/health"
 
 echo "waiting for $URL (up to ${TIMEOUT_S}s)"
 start=$(date +%s)

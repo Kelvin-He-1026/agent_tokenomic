@@ -12,7 +12,7 @@ from typing import Any, Callable
 
 from ..config import RunConfig
 from ..env import redact
-from ..telemetry import ToolCallRecord, TelemetryWriter, monotonic_ms, new_id
+from ..telemetry import ToolCallRecord, TelemetryWriter, monotonic_ms, new_id, now_ms
 from . import impl, schemas
 
 
@@ -65,7 +65,7 @@ class ToolRegistry:
 
     # -- the one entry point ----------------------------------------------
     def call(self, tool_name: str, args: dict[str, Any]) -> str:
-        started = monotonic_ms()
+        started, started_wall = monotonic_ms(), now_ms()
         self.tool_idx += 1
         valid, reason = schemas.validate_args(tool_name, args)
 
@@ -98,6 +98,7 @@ class ToolRegistry:
             run_id=self.run_id,
             parent_call_id=self.parent_call_id,
             tool_idx=self.tool_idx,
+            start_ts=started_wall,
             tool_name=tool_name,
             args_json=json.dumps(args, sort_keys=True),
             args_schema_valid=valid,

@@ -1,0 +1,326 @@
+{
+  "sweep": "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206",
+  "sweep_size": {
+    "runs": 90,
+    "unique_tasks": 15,
+    "frameworks": 3,
+    "thinking_modes": 2
+  },
+  "outcome_policy_version": "phase1-v2-p0-2",
+  "semantic_metric_version": "semantic-correctness-v1",
+  "tasks_changed": false,
+  "dataset_sha256": "4edc51e5d5ba9b568a058e394be451b28429ac86debd57425a866b31ac880728",
+  "original_csv_sha256": "e4f13d0a7fe03560070acfefb57bdb4e150f166030ac33fa48ba7c18c7738ad7",
+  "source_jsonl_sha256": {
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/off/plan.jsonl": "a9a8c13ca2e3ed563567944588f2b7fc81e93500e700352ef603e11b80723adc",
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/off/config.jsonl": "5e95ff349ff6ec8dfbebdc32d286f46678e227fbe8f109fe196f8042ac480624",
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/off/run.jsonl": "5d31d1ad91e8486f021437c56072c63deed0a8efaecce8d32a9c1a533f6c0bf2",
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/off/eval.jsonl": "570e6901a50eb1cd8e3df787a4eced9e95fcfa7c2754a34ab5fd0fc5621867e4",
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/off/tool_call.jsonl": "12c195dbd5c56ce6c5261058e2f22f227228d5a8f4874ef2bcd2bf2cb305f5ce",
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/off/llm_call.jsonl": "c27fea17bdc7a13adb725e72b6451adab9b647d6a1fbbebad1e18c73bf1baf09",
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/on/plan.jsonl": "b6e1732e9428d5f7f400fe97ff095787cd461209e981061a5b3e64189d7ff99f",
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/on/config.jsonl": "ce944e8142c092fa42b41dcd4aaaa366f310eefcff6677025dd86dbbee9066df",
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/on/run.jsonl": "bded90e42984be5a30c9fed8fce6453caaf86129a9bc34d0a1b97400b6560e00",
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/on/eval.jsonl": "9198979066040f34257c6587bc045f258bd5daee873de0a3712e4f706268123e",
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/on/tool_call.jsonl": "cbec7c7b443c7573c0719d351ca5f7cc630484be2962c87fd1817f5b6ca800e8",
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/on/llm_call.jsonl": "e8dc55c55ee51cef869d6c7817a60620f2c33c83b3c019a7fb1714a2c92400f2"
+  },
+  "corrected_csv": "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/results_p0_fixed_20261016_141746.csv",
+  "quality_report": "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/results_p0_fixed_20261016_141746.quality.json",
+  "observed_fixes": {
+    "original_summary_cap_hits": 0,
+    "summary_output_cap_hits": 6,
+    "per_call_output_cap_hits": 6,
+    "total_output_cap_hits": 0,
+    "completion_types": {
+      "natural_completion": 59,
+      "step_limit": 18,
+      "forced_final": 7,
+      "truncated": 6
+    },
+    "forced_final_strict_successes": 0,
+    "confirmed_successes_before_semantic_rejudge": 23,
+    "strict_successes_before_semantic_rejudge": 23,
+    "confirmed_successes_after_semantic_rejudge": 24,
+    "strict_successes_after_semantic_rejudge": 24
+  },
+  "offline_tests_passed": 87,
+  "semantic_rejudge": {
+    "status": "complete",
+    "executed": true,
+    "target_runs": 12,
+    "command": [
+      ".venv/bin/python",
+      "scripts/judge_runs.py",
+      "--runs",
+      "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/off",
+      "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/on",
+      "--tasks",
+      "dataset/tasks/phase1_v2.json",
+      "--select",
+      "judge_only",
+      "--metrics",
+      "semantic_correctness",
+      "--model",
+      "claude-opus-5-5",
+      "--effort",
+      "high",
+      "--workers",
+      "3"
+    ],
+    "destination": "Claude Code subscription judge: claude-opus-5-5",
+    "data_scope": "question, complete stored model answer, reference answer/context and grading rubric for the12 selected runs",
+    "initial_status": "blocked_auto_review",
+    "initial_rejection_reason": "Automatic approval review requires explicit permission to transmit these specific benchmark records to the external Claude service. No external rejudging was performed.",
+    "authorization": "User explicitly approved: 允许这12条发送给Claude并完成重评",
+    "target_run_details": [
+      {
+        "run_id": "run_bec022788222",
+        "task_id": "phase1-v2-medium-011",
+        "framework": "crewai",
+        "thinking_setting": "off",
+        "threshold": 0.8
+      },
+      {
+        "run_id": "run_25a650ed2044",
+        "task_id": "phase1-v2-medium-011",
+        "framework": "openai_agents",
+        "thinking_setting": "off",
+        "threshold": 0.8
+      },
+      {
+        "run_id": "run_bf796e3be7b2",
+        "task_id": "phase1-v2-medium-011",
+        "framework": "langgraph",
+        "thinking_setting": "off",
+        "threshold": 0.8
+      },
+      {
+        "run_id": "run_8d48743610ec",
+        "task_id": "phase1-v2-medium-012",
+        "framework": "openai_agents",
+        "thinking_setting": "off",
+        "threshold": 0.8
+      },
+      {
+        "run_id": "run_fbaf62d8dd26",
+        "task_id": "phase1-v2-medium-012",
+        "framework": "crewai",
+        "thinking_setting": "off",
+        "threshold": 0.8
+      },
+      {
+        "run_id": "run_a8f7e0372f21",
+        "task_id": "phase1-v2-medium-012",
+        "framework": "langgraph",
+        "thinking_setting": "off",
+        "threshold": 0.8
+      },
+      {
+        "run_id": "run_a8fa8e9be530",
+        "task_id": "phase1-v2-medium-011",
+        "framework": "crewai",
+        "thinking_setting": "on",
+        "threshold": 0.8
+      },
+      {
+        "run_id": "run_cd51c159c155",
+        "task_id": "phase1-v2-medium-011",
+        "framework": "openai_agents",
+        "thinking_setting": "on",
+        "threshold": 0.8
+      },
+      {
+        "run_id": "run_3c408379029a",
+        "task_id": "phase1-v2-medium-011",
+        "framework": "langgraph",
+        "thinking_setting": "on",
+        "threshold": 0.8
+      },
+      {
+        "run_id": "run_c577a9e364a3",
+        "task_id": "phase1-v2-medium-012",
+        "framework": "openai_agents",
+        "thinking_setting": "on",
+        "threshold": 0.8
+      },
+      {
+        "run_id": "run_83a37ef2230a",
+        "task_id": "phase1-v2-medium-012",
+        "framework": "crewai",
+        "thinking_setting": "on",
+        "threshold": 0.8
+      },
+      {
+        "run_id": "run_f4c1e3e07e46",
+        "task_id": "phase1-v2-medium-012",
+        "framework": "langgraph",
+        "thinking_setting": "on",
+        "threshold": 0.8
+      }
+    ],
+    "pending_runs": [],
+    "scored_runs": 12,
+    "remaining_pending": 0,
+    "passed": 1,
+    "failed": 11,
+    "threshold": 0.8,
+    "judge_calls": 12,
+    "judge_input_tokens": 49985,
+    "judge_output_tokens": 9293,
+    "execution_log": "output/judge_nemotron_p0_semantic_20261016_142343.log",
+    "call_log": "output/judge_calls_20261016_142345.jsonl",
+    "resume_check": "legacy metrics dry-run schedules0 remaining items",
+    "results": [
+      {
+        "run_id": "run_bf796e3be7b2",
+        "score": 0.8,
+        "threshold": 0.8,
+        "passed": true,
+        "judge_model": "claude-opus-5-5 via Claude Code 2.1.301 (headless, effort=high)",
+        "judge_version": "2.1.301",
+        "judge_id": "206e2f3930c00ac2",
+        "evaluation_version": "phase1-v2-p0-1",
+        "metric_version": "semantic-correctness-v1",
+        "answer_fingerprint": "c1dd92e00046a7b641d058ddca9c7286b63ae6699b118d5538225808537b802e"
+      },
+      {
+        "run_id": "run_bec022788222",
+        "score": 0.7,
+        "threshold": 0.8,
+        "passed": false,
+        "judge_model": "claude-opus-5-5 via Claude Code 2.1.301 (headless, effort=high)",
+        "judge_version": "2.1.301",
+        "judge_id": "206e2f3930c00ac2",
+        "evaluation_version": "phase1-v2-p0-1",
+        "metric_version": "semantic-correctness-v1",
+        "answer_fingerprint": "1f1517ab44301216fbec8f56833ccb1f91ce8ff586517cc592c6405c5e64f474"
+      },
+      {
+        "run_id": "run_25a650ed2044",
+        "score": 0.6,
+        "threshold": 0.8,
+        "passed": false,
+        "judge_model": "claude-opus-5-5 via Claude Code 2.1.301 (headless, effort=high)",
+        "judge_version": "2.1.301",
+        "judge_id": "206e2f3930c00ac2",
+        "evaluation_version": "phase1-v2-p0-1",
+        "metric_version": "semantic-correctness-v1",
+        "answer_fingerprint": "7e47b65bb8854ec387fe0e50493508959a1fe6b08cad7100a88b20813b747978"
+      },
+      {
+        "run_id": "run_fbaf62d8dd26",
+        "score": 0.3,
+        "threshold": 0.8,
+        "passed": false,
+        "judge_model": "claude-opus-5-5 via Claude Code 2.1.301 (headless, effort=high)",
+        "judge_version": "2.1.301",
+        "judge_id": "206e2f3930c00ac2",
+        "evaluation_version": "phase1-v2-p0-1",
+        "metric_version": "semantic-correctness-v1",
+        "answer_fingerprint": "e69610ebd776fa57f72e16d6aa161266f233b1d2b376735dd8f5839c9be0979b"
+      },
+      {
+        "run_id": "run_8d48743610ec",
+        "score": 0.4,
+        "threshold": 0.8,
+        "passed": false,
+        "judge_model": "claude-opus-5-5 via Claude Code 2.1.301 (headless, effort=high)",
+        "judge_version": "2.1.301",
+        "judge_id": "206e2f3930c00ac2",
+        "evaluation_version": "phase1-v2-p0-1",
+        "metric_version": "semantic-correctness-v1",
+        "answer_fingerprint": "975ba2b45a1777c130b4c9492cf1ff148c5238657feb174ce34f38acc00fbfcb"
+      },
+      {
+        "run_id": "run_a8f7e0372f21",
+        "score": 0.4,
+        "threshold": 0.8,
+        "passed": false,
+        "judge_model": "claude-opus-5-5 via Claude Code 2.1.301 (headless, effort=high)",
+        "judge_version": "2.1.301",
+        "judge_id": "206e2f3930c00ac2",
+        "evaluation_version": "phase1-v2-p0-1",
+        "metric_version": "semantic-correctness-v1",
+        "answer_fingerprint": "85cfee6a3c14c827b4fc8018462eaed54c83f9b0a6f29fe3d348c6646e5f4102"
+      },
+      {
+        "run_id": "run_a8fa8e9be530",
+        "score": 0.5,
+        "threshold": 0.8,
+        "passed": false,
+        "judge_model": "claude-opus-5-5 via Claude Code 2.1.301 (headless, effort=high)",
+        "judge_version": "2.1.301",
+        "judge_id": "206e2f3930c00ac2",
+        "evaluation_version": "phase1-v2-p0-1",
+        "metric_version": "semantic-correctness-v1",
+        "answer_fingerprint": "8f9d23fca0319281e554419d87960e2f85e96cf156684ecaf09ed48f8a5e6e76"
+      },
+      {
+        "run_id": "run_cd51c159c155",
+        "score": 0.7,
+        "threshold": 0.8,
+        "passed": false,
+        "judge_model": "claude-opus-5-5 via Claude Code 2.1.301 (headless, effort=high)",
+        "judge_version": "2.1.301",
+        "judge_id": "206e2f3930c00ac2",
+        "evaluation_version": "phase1-v2-p0-1",
+        "metric_version": "semantic-correctness-v1",
+        "answer_fingerprint": "0b82c5819bb0f761b3a023163f4d0a09667d5c6f0ab17e7841f8e4f98d1d97b8"
+      },
+      {
+        "run_id": "run_3c408379029a",
+        "score": 0.7,
+        "threshold": 0.8,
+        "passed": false,
+        "judge_model": "claude-opus-5-5 via Claude Code 2.1.301 (headless, effort=high)",
+        "judge_version": "2.1.301",
+        "judge_id": "206e2f3930c00ac2",
+        "evaluation_version": "phase1-v2-p0-1",
+        "metric_version": "semantic-correctness-v1",
+        "answer_fingerprint": "54e760557ae990c8cb0ca92aafd07aeb3836556105b5b8a69ce8e2a1ad08eec7"
+      },
+      {
+        "run_id": "run_c577a9e364a3",
+        "score": 0.3,
+        "threshold": 0.8,
+        "passed": false,
+        "judge_model": "claude-opus-5-5 via Claude Code 2.1.301 (headless, effort=high)",
+        "judge_version": "2.1.301",
+        "judge_id": "206e2f3930c00ac2",
+        "evaluation_version": "phase1-v2-p0-1",
+        "metric_version": "semantic-correctness-v1",
+        "answer_fingerprint": "f90b1bf45c7d474aa046ede9b4ef665750ffa5074c86ccee9272ad80522f680f"
+      },
+      {
+        "run_id": "run_83a37ef2230a",
+        "score": 0.3,
+        "threshold": 0.8,
+        "passed": false,
+        "judge_model": "claude-opus-5-5 via Claude Code 2.1.301 (headless, effort=high)",
+        "judge_version": "2.1.301",
+        "judge_id": "206e2f3930c00ac2",
+        "evaluation_version": "phase1-v2-p0-1",
+        "metric_version": "semantic-correctness-v1",
+        "answer_fingerprint": "3d2c0ecb6ef898ab505bdb2ef99747360cc03e7ee94a469f147793a5a5c0dab4"
+      },
+      {
+        "run_id": "run_f4c1e3e07e46",
+        "score": 0.4,
+        "threshold": 0.8,
+        "passed": false,
+        "judge_model": "claude-opus-5-5 via Claude Code 2.1.301 (headless, effort=high)",
+        "judge_version": "2.1.301",
+        "judge_id": "206e2f3930c00ac2",
+        "evaluation_version": "phase1-v2-p0-1",
+        "metric_version": "semantic-correctness-v1",
+        "answer_fingerprint": "39c5ef8a7958e2ab52f98104ef6780b99eaf8b8505f869c2b527ffd7800050d1"
+      }
+    ]
+  },
+  "post_rejudge_eval_sha256": {
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/off/eval.jsonl": "c6df5a89afd63d1e136879f96c4423a4204569636d3675964359075869397451",
+    "output/runs/thinking_sweep_NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16_20261016_120206/on/eval.jsonl": "eb4899a737a79069e7eb886d8b6f85c90df2039949bc3589a2f1f4d80e9fd054"
+  },
+  "source_integrity_checks": "Frozen tasks, old CSV and source run/call/tool/config/plan files unchanged; historical eval rows preserved byte-for-byte with new verdicts appended."
+}

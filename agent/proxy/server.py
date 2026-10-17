@@ -1,7 +1,7 @@
 """OpenAI-compatible logging proxy: the source of record for LLM telemetry.
 
-Every framework points at this instead of vLLM. It forwards requests unchanged
-and records what actually went over the wire: exact prompts, token counts,
+Every framework points at this instead of vLLM. It enforces the bound run's
+call and output caps and records what actually went over the wire: prompts, token counts,
 TTFT, latency, and whether reasoning content was echoed back into the message
 history. Framework self-reports are never used.
 
@@ -78,12 +78,29 @@ async def bind_run(request: Request) -> dict[str, Any]:
             },
         )
 
+    if state["inflight"]:
+        return JSONResponse(status_code=409, content={"detail": "previous run still has inflight requests"})
+    limits = body.get("limits") or {}
+    if limits:
+        for key in ("max_llm_calls", "max_tokens_per_call", "max_total_output_tokens"):
+            value = limits.get(key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+                return JSONResponse(status_code=400, content={"detail": f"invalid {key}"})
+        if not isinstance(limits.get("task_timeout_s"), (int, float)) or limits["task_timeout_s"] <= 0:
+            return JSONResponse(status_code=400, content={"detail": "invalid task_timeout_s"})
     state["session"] = session or held
     state["last_bind"] = now
     state["run_id"] = body.get("run_id", "unbound")
     state["out_dir"] = body.get("out_dir") or state["out_dir"]
     state["call_idx"] = 0
-    return {"bound": state["run_id"], "out_dir": state["out_dir"], "session": state["session"]}
+    state["limits"] = limits
+    state["forced_final_markers"] = body.get("forced_final_markers") or []
+    state["output_tokens"] = 0
+    state["blocked_requests"] = 0
+    state["termination_reason"] = ""
+    state["deadline"] = time.monotonic() + limits["task_timeout_s"] if limits else None
+    return {"bound": state["run_id"], "out_dir": state["out_dir"], "session": state["session"],
+            "accounting_policy": "proxy-v1", "limits": limits}
 
 
 @app.post("/control/release")
@@ -103,7 +120,9 @@ async def pending() -> dict[str, Any]:
     its llm_call row, so the harness waits on this before reading telemetry.
     Without it, the last call of a run is missing from the joins.
     """
-    return {"inflight": state["inflight"]}
+    return {k: state.get(k, 0) for k in (
+        "inflight", "run_id", "call_idx", "output_tokens", "blocked_requests", "termination_reason"
+    )}
 
 
 @app.get("/control/health")
@@ -113,6 +132,7 @@ async def health() -> dict[str, Any]:
         "upstream": UPSTREAM,
         "run_id": state["run_id"],
         "out_dir": state["out_dir"],
+        "accounting_policy": "proxy-v1",
     }
 
 
@@ -136,11 +156,40 @@ async def forward(path: str, request: Request):
         )
 
     payload = json.loads(body) if body else {}
+    if run_id != state["run_id"]:
+        return JSONResponse(status_code=409, content={"error": {"message": "run binding mismatch"}})
+    limits = state.get("limits") or {}
+    requested_cap = payload.get("max_completion_tokens", payload.get("max_tokens"))
+    effective_cap = requested_cap
+    if limits:
+        reason = ""
+        if state.get("termination_reason"):
+            reason = state["termination_reason"]
+        elif time.monotonic() >= state["deadline"]:
+            reason = "timeout"
+        elif state["call_idx"] >= limits["max_llm_calls"]:
+            reason = "call_cap"
+        elif state["output_tokens"] >= limits["max_total_output_tokens"]:
+            reason = "output_cap"
+        elif state["inflight"] or payload.get("n", 1) != 1:
+            reason = "concurrency_violation"
+        if reason:
+            state["blocked_requests"] += 1
+            state["termination_reason"] = reason
+            return JSONResponse(status_code=429, content={"error": {
+                "message": f"benchmark stopped request: {reason}", "type": "benchmark_limit", "code": reason
+            }})
+        effective_cap = min(limits["max_tokens_per_call"],
+                            limits["max_total_output_tokens"] - state["output_tokens"])
+        # Use one canonical spelling and value across all frameworks. Thinking
+        # tokens are part of this completion budget, as reported by upstream.
+        payload.pop("max_tokens", None)
+        payload["max_completion_tokens"] = effective_cap
+        body = json.dumps(payload).encode()
 
     # vLLM omits usage from a streamed response unless asked, and frameworks
     # differ in whether they ask. Without this every token count is zero, so
-    # the proxy requests usage itself. This is the one change it makes to a
-    # request: it adds a reporting flag and does not affect generation.
+    # the proxy requests usage itself, in addition to enforcing output caps.
     if payload.get("stream"):
         options = dict(payload.get("stream_options") or {})
         if not options.get("include_usage"):
@@ -156,6 +205,8 @@ async def forward(path: str, request: Request):
         run_id=run_id,
         call_idx=state["call_idx"],
         request_ts=now_ms(),
+        requested_output_cap=requested_cap,
+        effective_output_cap=effective_cap,
     )
     _describe_request(call, payload)
     if SAVE_BLOBS:
@@ -170,12 +221,22 @@ async def forward(path: str, request: Request):
             media_type="text/event-stream",
         )
 
-    resp = await client.post(f"{UPSTREAM}/v1/chat/completions", content=body, headers=headers)
-    call.latency_ms = monotonic_ms() - started
-    data = resp.json() if resp.content else {}
-    _describe_response(call, data)
-    _finish(call, data, run_id, writer)
-    return JSONResponse(status_code=resp.status_code, content=data)
+    data = {}
+    try:
+        resp = await client.post(f"{UPSTREAM}/v1/chat/completions", content=body, headers=headers)
+        call.http_status = resp.status_code
+        data = resp.json() if resp.content else {}
+        if resp.is_error:
+            call.error = f"upstream HTTP {resp.status_code}"
+        _describe_response(call, data)
+        return JSONResponse(status_code=resp.status_code, content=data)
+    except Exception as exc:
+        call.error = f"{type(exc).__name__}: {exc}"
+        call.usage_missing = True
+        raise
+    finally:
+        call.latency_ms = monotonic_ms() - started
+        _finish(call, data, run_id, writer)
 
 
 async def _stream(
@@ -192,6 +253,9 @@ async def _stream(
         async with client.stream(
             "POST", f"{UPSTREAM}/v1/chat/completions", content=body, headers=headers
         ) as resp:
+            call.http_status = resp.status_code
+            if resp.is_error:
+                call.error = f"upstream HTTP {resp.status_code}"
             async for line in resp.aiter_lines():
                 if line.startswith("data: "):
                     blob = line[6:].strip()
@@ -203,6 +267,9 @@ async def _stream(
                         except json.JSONDecodeError:
                             pass
                 yield (line + "\n\n").encode() if line else b"\n"
+    except Exception as exc:
+        call.error = f"{type(exc).__name__}: {exc}"
+        raise
     finally:
         # Also reached when the client closes the stream as soon as it has read
         # [DONE], which cancels this generator at a yield. Without it the row
@@ -218,6 +285,10 @@ def _describe_request(call: LlmCallRecord, payload: dict[str, Any]) -> None:
     messages = payload.get("messages", [])
     call.n_messages = len(messages)
     call.prompt_chars = len(json.dumps(messages))
+    call.forced_final_answer = any(
+        m.get("role") == "user" and isinstance(m.get("content"), str)
+        and m["content"] in state.get("forced_final_markers", []) for m in messages
+    )
     # Residual row 2: did the framework put reasoning back into the history?
     call.contains_reasoning_in_history = any(
         m.get("reasoning_content") or m.get("reasoning") or "<think>" in str(m.get("content", ""))
@@ -228,6 +299,7 @@ def _describe_request(call: LlmCallRecord, payload: dict[str, Any]) -> None:
 
 def _describe_response(call: LlmCallRecord, data: dict[str, Any]) -> None:
     usage = data.get("usage") or {}
+    call.usage_missing = "completion_tokens" not in usage or "prompt_tokens" not in usage
     call.prompt_tokens = usage.get("prompt_tokens", 0)
     call.completion_tokens = usage.get("completion_tokens", 0)
     details = usage.get("completion_tokens_details") or {}
@@ -294,4 +366,11 @@ def _finish(
             call.response_path = str(p)
         writer.write(call)
     finally:
+        if run_id == state["run_id"]:
+            state["output_tokens"] = state.get("output_tokens", 0) + call.completion_tokens
+            if state.get("limits") and not call.error:
+                if call.usage_missing:
+                    state["termination_reason"] = "usage_missing"
+                elif call.effective_output_cap and call.completion_tokens > call.effective_output_cap:
+                    state["termination_reason"] = "output_cap_violation"
         state["inflight"] = max(0, state["inflight"] - 1)

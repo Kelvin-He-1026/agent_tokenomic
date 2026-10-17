@@ -5,17 +5,18 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 VENV=${VENV:-.venv/bin}
-UPSTREAM=${ATK_UPSTREAM:-http://127.0.0.1:8000}
+eval "$(.venv/bin/python -m agent.stacks --shell)" || exit 1
+UPSTREAM=${ATK_UPSTREAM:-http://127.0.0.1:$VLLM_PORT}
 
 if [[ "${1:-}" == "--mock" ]]; then
-  "$VENV/uvicorn" agent.proxy.mock_upstream:app --port 8000 --log-level warning \
-    > /tmp/atk_mock.log 2>&1 &
-  echo "mock upstream  pid=$! port=8000"
+  $PIN "$VENV/uvicorn" agent.proxy.mock_upstream:app --port "$VLLM_PORT" --log-level warning \
+    > "/tmp/atk_mock${STACK_NAME:+_$STACK_NAME}.log" 2>&1 &
+  echo "mock upstream  pid=$! port=$VLLM_PORT"
 fi
 
-ATK_UPSTREAM="$UPSTREAM" "$VENV/uvicorn" agent.proxy.server:app --port 8100 --log-level warning \
-  > /tmp/atk_proxy.log 2>&1 &
-echo "logging proxy  pid=$! port=8100 upstream=$UPSTREAM"
+ATK_UPSTREAM="$UPSTREAM" $PIN "$VENV/uvicorn" agent.proxy.server:app --port "$PROXY_PORT" --log-level warning \
+  > "/tmp/atk_proxy${STACK_NAME:+_$STACK_NAME}.log" 2>&1 &
+echo "logging proxy  pid=$! port=$PROXY_PORT upstream=$UPSTREAM"
 
 sleep 4
-curl -s http://127.0.0.1:8100/control/health && echo
+curl -s "http://127.0.0.1:$PROXY_PORT/control/health" && echo

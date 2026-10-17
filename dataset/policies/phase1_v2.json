@@ -1,0 +1,69 @@
+{
+  "version": "phase1-v2-p0-1",
+  "task_count": 100,
+  "difficulty": {
+    "easy": 25,
+    "medium": 50,
+    "hard": 25
+  },
+  "correctness": {
+    "deterministic_tasks": 80,
+    "semantic_tasks": 20,
+    "semantic_metric": "semantic_correctness",
+    "semantic_threshold": 0.8,
+    "pending_judge": "unknown; never silently excluded from the full denominator",
+    "malformed_deterministic_answer": "recover only unambiguous values; otherwise semantic unknown and explicit unscorable_format failure; no additional LLM calls",
+    "semantic_metric_version": "semantic-correctness-v1",
+    "score_scale": "DeepEval raw0–10 is normalized to0–1; compare normalized score>=0.8 inclusively; require matching recorded threshold and metric version",
+    "automatic_selection": "Judge-only runs always include semantic_correctness even with legacy diagnostic metric lists; explicit --diagnostics-only opts out"
+  },
+  "outcomes": {
+    "success": "execution completed AND semantic_correct; format does not gate this value",
+    "strict_success": "format_success AND completion_type=natural_completion; forced finals, step limits and truncation never count",
+    "semantic_correct": "true/false/unknown, independently of termination",
+    "format_ok": "true/false/not applicable, independently of gold value correctness",
+    "format_success": "success AND format_ok where a format is specified"
+  },
+  "resources": {
+    "accounting_policy": "proxy-v1",
+    "source": "frozen RunConfig, identical across frameworks in a comparison",
+    "recommended_baseline": {
+      "max_llm_calls": 10,
+      "max_tokens_per_call": 1024,
+      "max_total_output_tokens": 10240,
+      "task_timeout_s": 600
+    },
+    "call_cap": "shared proxy counts every admitted generation request, including forced finalization and failed upstream attempts; rejected attempts are recorded separately",
+    "output_cap": "proxy sets min(per-call cap, remaining total output cap); completion usage includes reasoning tokens",
+    "total_output_cap_default": "max_llm_calls * sampling.max_tokens; explicit limits.max_total_output_tokens may lower this",
+    "retries": "consume the same call budget; client_retries remains 0 in the supplied configs",
+    "deadline": "reject new generation requests after the task deadline and classify elapsed overruns as timeout; no hard preemption of an in-progress tool or model request",
+    "comparison": "do not pool different call/output caps, timeouts or accounting policies",
+    "cap_flags": {
+      "output_cap_reached": "union of per_call_output_cap_reached and total_output_cap_reached, including unknown length terminations",
+      "per_call_output_cap_reached": "a call reached its per-call output ceiling, including finish_reason=length at that ceiling",
+      "total_output_cap_reached": "run-total completion output is exhausted, or length occurs at a proxy-shrunk remaining-total allowance"
+    }
+  },
+  "termination": {
+    "natural_stop": "stop response, including at the last permitted call, may complete",
+    "forced_final_answer": "retain completed status for valid stop within shared budgets and keep content scores; completion_type=forced_final and strict_success=false",
+    "call_cap": "step_limit",
+    "per_call_output_cap": "truncated",
+    "output_cap": "truncated",
+    "timeout": "timeout",
+    "incomplete_trajectory": "framework_error",
+    "telemetry_missing": "framework_error",
+    "completion_type": "natural_completion | forced_final | step_limit | truncated | timeout | error | unknown_completion"
+  },
+  "reporting": {
+    "denominator": "all planned tasks and repeats; include failures, truncations and pending judgments",
+    "coverage": "report pending judgments, unscorable content and semantic/format coverage",
+    "cost": "all run tokens and elapsed time divided by confirmed successes; label provisional while judgments are pending",
+    "judge_provenance": "judge_id, evaluation_version and answer_fingerprint required; select one judge explicitly if several are present",
+    "execution_plan": "plan.jsonl is written before execution; missing/duplicate/unexpected runs prevent a complete benchmark result",
+    "task_version": "new runs fingerprint their task definition; changed definitions are not silently rescored",
+    "accounting_revision": "The derived export reconstructs flags from raw calls; original telemetry is preserved. Outcome revision is independent of frozen task-definition fingerprints."
+  },
+  "outcome_policy_version": "phase1-v2-p0-2"
+}

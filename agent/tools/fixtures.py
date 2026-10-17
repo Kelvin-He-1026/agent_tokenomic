@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -165,7 +166,10 @@ class FixtureStore:
         fid = fixture_id(tool_name, args)
         p = self.path(tool_name, fid)
         p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(
+        # Written to a temporary file and renamed, so a parallel recorder never
+        # reads half a fixture.
+        tmp = p.with_name(f".{p.name}.{os.getpid()}.tmp")
+        tmp.write_text(
             json.dumps(
                 {
                     "fixture_id": fid,
@@ -179,6 +183,7 @@ class FixtureStore:
                 indent=2,
             )
         )
+        tmp.replace(p)
         return fid
 
     def stats(self, tool_name: str) -> dict[str, Any]:

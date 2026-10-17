@@ -1,0 +1,133 @@
+{
+  "dataset": "dataset/tasks/phase1_v2.json",
+  "dataset_sha256": "4edc51e5d5ba9b568a058e394be451b28429ac86debd57425a866b31ac880728",
+  "created": "2026-10-15",
+  "as_of_date": "2026-04-06",
+  "tasks": 100,
+  "difficulty": {
+    "easy": 25,
+    "medium": 50,
+    "hard": 25
+  },
+  "difficulty_scores": {
+    "1": 17,
+    "2": 8,
+    "3": 50,
+    "4": 25
+  },
+  "task_types": {
+    "single_tool_lookup": 18,
+    "no_tool": 7,
+    "multi_hop": 16,
+    "analysis": 59
+  },
+  "answer_checks": {
+    "key_facts": 13,
+    "structured": 59,
+    "numeric_tolerance": 8,
+    "judge_only": 20
+  },
+  "capabilities": {
+    "filtering": 30,
+    "calculation": 57,
+    "incomplete_evidence": 43,
+    "dependent_retrieval": 16,
+    "cross_document": 51,
+    "comparison": 55,
+    "conditional_decision": 29,
+    "cross_table": 6,
+    "constrained_analysis": 25
+  },
+  "answerability": {
+    "answerable": 70,
+    "partial": 30
+  },
+  "tasks_with_multiple_source_files": 51,
+  "tasks_with_multiple_papers": 46,
+  "distinct_evidence_families": 58,
+  "retained_or_modified_original_tasks": 34,
+  "original_dataset_sha256": "b9682c65e3cc2278e3b5710c57f5c744e4ebb3e9815c13a011c4f1ebec29191d",
+  "checks_completed": [
+    "Exactly100 unique task IDs and normalized questions; tier counts25/50/25.",
+    "Every deterministic reference answer passes; no question alone passes its deterministic answer check.",
+    "No key-fact alternatives are leaked by the question.",
+    "ManuRAG correctness/similarity and reordered precision/recall transcriptions match independent PDF-text parses.",
+    "All DRAGIN exact-answer rates and activation-count transcriptions match independent PDF-text parses.",
+    "All HotpotQA split counts match independent PDF-text parses.",
+    "Document/fixture SHA-256 provenance and one-based PDF pages recorded per task.",
+    "Solution-step dependencies point to preceding steps only; ideal call budgets fit within10.",
+    "No new web fixtures, live APIs, or unimplemented failure injection required.",
+    "Original phase1.json hash is unchanged.",
+    "All100 records remain loadable;59 use the new structured mode,8 strict numeric scalars,13 legacy key-fact checks,and20 semantic checks.",
+    "All80 deterministic reference answers pass; all20 semantic answers remain unscored without a judge.",
+    "Structured public output shapes do not include gold scalar values, expected set lengths or which scalar fields must be null.",
+    "Original natural-language questions and explanations are retained as metadata on converted tasks.",
+    "Real task loader and exporter produce80 deterministic reference successes and20 semantic-only rows.",
+    "P0: all100 tasks declare the same evaluation revision;80 deterministic references pass and20 remain judge-only.",
+    "P0:74 offline regression tests pass, including semantic/format/execution separation, real GEval stub integration, actual proxy cap enforcement, plan interruption, and unified100-task export.",
+    "P0: three installed frameworks pass six scripted mock-upstream smoke runs at call caps2 and3; CrewAI forced finalization is detected from its wire request.",
+    "P0: original phase1.json SHA-256 remains unchanged; no paid judge or real model benchmark was run."
+  ],
+  "not_performed": [
+    "Human review",
+    "End-to-end model/framework benchmark",
+    "Empirical difficulty calibration",
+    "Exhaustive proof of minimum retrieval depth or absence of retrieval shortcuts"
+  ],
+  "grading_revised": "2026-10-16",
+  "grading_version": "phase1-v2-p0-1",
+  "deterministic_tasks": 80,
+  "semantic_tasks": 20,
+  "semantic_task_ids": [
+    "phase1-v2-hard-021",
+    "phase1-v2-medium-011",
+    "phase1-v2-medium-012",
+    "phase1-v2-medium-013",
+    "phase1-v2-medium-014",
+    "phase1-v2-medium-015",
+    "phase1-v2-medium-016",
+    "phase1-v2-medium-017",
+    "phase1-v2-medium-018",
+    "phase1-v2-medium-019",
+    "phase1-v2-medium-020",
+    "phase1-v2-medium-042",
+    "phase1-v2-medium-043",
+    "phase1-v2-medium-044",
+    "phase1-v2-medium-045",
+    "phase1-v2-medium-046",
+    "phase1-v2-medium-047",
+    "phase1-v2-medium-048",
+    "phase1-v2-medium-049",
+    "phase1-v2-medium-050"
+  ],
+  "scorer_sha256": "e9cde2187b37a7953e07455f2c5ede27c55ebc0ba6a94207478f710e63a73aca",
+  "regression_tests": {
+    "command": ".venv/bin/python -m unittest discover -s tests",
+    "passed": 36,
+    "failed": 0,
+    "test_file_sha256": "25a083ac0d379103249b1b75f6ffc92aa74966bf22dbe55e5c4e4acf26621cf4"
+  },
+  "export_integration": {
+    "deterministically_successful_reference_rows": 80,
+    "semantic_reference_rows": 20,
+    "loader": "agent.harness.runner.Task.load_all",
+    "exporter": "scripts.export_csv._success"
+  },
+  "prior_grading_revisions": [
+    {
+      "grading_version": "deterministic-v1",
+      "dataset_sha256": "251f1f65f8d7679f6939ee87414931a95da37f9de4cf66af61ba4202139afc61",
+      "grading_revised": "2026-10-15"
+    }
+  ],
+  "p0_validation": {
+    "offline_tests": 74,
+    "mock_framework_runs": 6,
+    "mock_smoke_report": "dataset/reviews/phase1_v2_p0_smoke.json",
+    "policy": "dataset/policies/phase1_v2.json",
+    "contract_notes": "dataset/reviews/phase1_v2_p0.md",
+    "semantic_metric": "semantic_correctness",
+    "semantic_threshold": 0.8,
+    "real_model_quality_measured": false
+  }
+}

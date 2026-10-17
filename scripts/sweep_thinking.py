@@ -47,12 +47,25 @@ def sh(cmd: list[str], log: Path | None = None, check: bool = True) -> int:
         return subprocess.run(cmd, cwd=ROOT, stdout=fh, stderr=subprocess.STDOUT, check=check).returncode
 
 
-def harness_running() -> bool:
+def harness_running(stack: str) -> bool:
+    """A harness already using this sweep's stack (the other stack is fine)."""
     out = subprocess.run(["pgrep", "-af", "agent.harness.cli"], capture_output=True, text=True).stdout
-    return any("pgrep" not in line for line in out.splitlines())
+    for line in out.splitlines():
+        if "pgrep" in line or "bash -c" in line:
+            continue
+        on_b = "--stack b" in line
+        if on_b == (stack == "b"):
+            return True
+    return False
 
 
-LOCK = ROOT / "output" / ".sweep.lock"
+def lock_path(stack: str) -> Path:
+    # Stack a and the single stack share GPU0 and ports 8000/8100, so they
+    # share a lock; stack b has its own.
+    return ROOT / "output" / (".sweep_b.lock" if stack == "b" else ".sweep.lock")
+
+
+LOCK = lock_path(os.environ.get("ATK_STACK", ""))
 
 
 def acquire_lock(out_root: Path, modes: list[str], config: str) -> None:
@@ -91,8 +104,15 @@ def acquire_lock(out_root: Path, modes: list[str], config: str) -> None:
     atexit.register(release)
 
 
-def write_cell_config(base: dict, mode: str, path: Path) -> None:
+def write_cell_config(base: dict, mode: str, path: Path, max_tokens: int = 0,
+                      tp_size: int = 0) -> None:
     cell = yaml.safe_load(yaml.safe_dump(base))  # deep copy
+    if tp_size:
+        cell["model"]["tp_size"] = tp_size
+    if max_tokens:
+        # Applied to every mode, "off" included, so the modes differ only in
+        # thinking. Thinking tokens count against this limit.
+        cell.setdefault("sampling", {})["max_tokens"] = max_tokens
     if mode == "off":
         cell["model"]["thinking_setting"] = "off"
         cell["model"]["reasoning_effort"] = ""
@@ -132,9 +152,87 @@ def serve(config: Path, log: Path) -> None:
         raise SystemExit(f"vLLM did not start for {config.name}; see {log}")
 
 
+def record_parallel(config: Path, mode_dir: Path, args, workers: int) -> int:
+    """Record-mode run split across `workers` harnesses, all on one vLLM server.
+
+    Recording only has to capture the web queries, not clean timings, so the
+    one-request-at-a-time rule is relaxed here: each worker gets its own proxy
+    (the proxy serves one harness session at a time) and a slice of the tasks,
+    and vLLM batches their requests. Batching can shift greedy decoding very
+    slightly, so a few queries in the later replay run may still miss and show
+    up as failed or approximate fixture matches.
+    """
+    import json
+
+    from agent import stacks
+    from agent.harness.cli import select_per_difficulty, select_tasks
+    from agent.harness.runner import Task
+
+    tasks = Task.load_all(ROOT / args.tasks)
+    tasks = (select_per_difficulty(tasks, args.per_difficulty) if args.per_difficulty
+             else select_tasks(tasks, args.limit))
+    workers = max(1, min(workers, len(tasks)))
+    upstream = stacks.get().vllm_url
+    shard_dir = mode_dir / "shards"
+    shard_dir.mkdir(parents=True, exist_ok=True)
+
+    proxies, harnesses = [], []
+    try:
+        for i in range(workers):
+            # Round-robin keeps each shard's mix of easy and hard tasks similar.
+            shard = [t.raw for t in tasks[i::workers]]
+            (shard_dir / f"shard_{i}.json").write_text(json.dumps(shard))
+            port = PARALLEL_PROXY_BASE + i
+            proxies.append(subprocess.Popen(
+                [str(ROOT / ".venv/bin/uvicorn"), "agent.proxy.server:app",
+                 "--port", str(port), "--log-level", "warning"],
+                cwd=ROOT, env={**os.environ, "ATK_UPSTREAM": upstream},
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True))
+        for i in range(workers):
+            port = PARALLEL_PROXY_BASE + i
+            for _ in range(60):
+                if subprocess.run(["curl", "-s", "--max-time", "2",
+                                   f"http://127.0.0.1:{port}/control/health"],
+                                  capture_output=True).returncode == 0:
+                    break
+                time.sleep(1)
+            else:
+                raise SystemExit(f"recording proxy on {port} did not start")
+        print(f"recording with {workers} parallel workers against {upstream}", flush=True)
+        for i in range(workers):
+            log = open(mode_dir.parent / f"harness_{mode_dir.name}_w{i}.log", "w")
+            harnesses.append(subprocess.Popen([
+                PY, "-u", "-m", "agent.harness.cli",
+                "--config", str(config),
+                "--tasks", str(shard_dir / f"shard_{i}.json"),
+                "--frameworks", args.frameworks,
+                "--repeats", str(args.repeats),
+                "--base-url", f"http://127.0.0.1:{PARALLEL_PROXY_BASE + i}/v1",
+                "--out", str(mode_dir / f"w{i}"), "--no-timestamp",
+                "--tool-mode", "record", "--run-code", args.run_code,
+            ], cwd=ROOT, stdout=log, stderr=subprocess.STDOUT))
+        codes = [h.wait() for h in harnesses]
+    finally:
+        for h in harnesses:
+            if h.poll() is None:
+                h.terminate()
+        for pr in proxies:
+            pr.terminate()
+    failed = [i for i, c in enumerate(codes) if c != 0]
+    if failed:
+        print(f"workers {failed} exited non-zero; see harness_{mode_dir.name}_w*.log", flush=True)
+    return 1 if failed else 0
+
+
+PARALLEL_PROXY_BASE = 8200
+
+
 def ensure_proxy() -> None:
+    from agent import stacks
+
+    port = stacks.get().proxy_port
     rc = subprocess.run(["curl", "-s", "--max-time", "3",
-                         "http://127.0.0.1:8100/control/health"],
+                         f"http://127.0.0.1:{port}/control/health"],
                         capture_output=True).returncode
     if rc != 0:
         sh(["./scripts/start_stack.sh"])
@@ -149,7 +247,20 @@ def main() -> int:
     ap.add_argument("--repeats", type=int, default=3)
     ap.add_argument("--limit", type=int, default=0,
                     help="sample N tasks across task types; 0 = every task (default)")
+    ap.add_argument("--stack", default="", choices=["", "a", "b"],
+                    help="serving stack (agent/stacks.py); two sweeps can run at once on a and b")
+    ap.add_argument("--per-difficulty", type=int, default=0,
+                    help="trial sweep: N tasks per difficulty level; overrides --limit")
+    ap.add_argument("--workers", type=int, default=1,
+                    help="record mode only: split each mode across N parallel harnesses on one "
+                         "server. Much faster, but timings are not clean, so it is for recording")
     ap.add_argument("--out-root", default="")
+    ap.add_argument("--tp-size", type=int, default=0,
+                    help="override model.tp_size for every mode; tp_size 2 uses both GPUs, "
+                         "so it cannot be combined with --stack")
+    ap.add_argument("--max-tokens", type=int, default=0,
+                    help="override sampling.max_tokens for every mode; thinking tokens count "
+                         "against it, so the base config's 1024 truncates most thinking runs")
     ap.add_argument("--run-code", default="",
                     help="label recorded on every run of every mode (passed to the harness)")
     ap.add_argument("--tool-mode", choices=["replay", "record"], default="replay",
@@ -158,8 +269,17 @@ def main() -> int:
     ap.add_argument("--dry-run", action="store_true",
                     help="write and validate the mode configs, print the plan, touch nothing")
     args = ap.parse_args()
+    global LOCK
+    if args.stack:
+        # Inherited by every script and harness this sweep starts.
+        os.environ["ATK_STACK"] = args.stack
+    LOCK = lock_path(args.stack)
+    if args.workers > 1 and args.tool_mode != "record":
+        raise SystemExit("--workers is for --tool-mode record only: parallel runs do not give clean timings")
+    if args.tp_size > 1 and args.stack:
+        raise SystemExit("--tp-size above 1 uses both GPUs; drop --stack and run it alone")
 
-    if harness_running():
+    if harness_running(args.stack):
         raise SystemExit("a harness is already running; wait for it (./scripts/status.sh)")
 
     modes = [m.strip() for m in args.modes.split(",") if m.strip()]
@@ -176,7 +296,7 @@ def main() -> int:
     configs = {}
     for mode in modes:
         path = out_root / "configs" / f"{mode}.yaml"
-        write_cell_config(base, mode, path)
+        write_cell_config(base, mode, path, args.max_tokens, args.tp_size)
         validate(path)
         configs[mode] = path
     print(f"sweep: {modes} -> {out_root}\n", flush=True)
@@ -186,8 +306,14 @@ def main() -> int:
             print(f"  {mode:7s} thinking={m['thinking_setting']:3s} "
                   f"effort={m['reasoning_effort'] or '-':6s} -> {out_root / mode}")
         import json
-        n_tasks = len(json.loads((ROOT / args.tasks).read_text()))
+        items = json.loads((ROOT / args.tasks).read_text())
+        n_tasks = len(items)
         n = min(args.limit, n_tasks) if args.limit else n_tasks
+        if args.per_difficulty:
+            levels: dict[str, int] = {}
+            for it in items:
+                levels[it.get("difficulty", "unknown")] = levels.get(it.get("difficulty", "unknown"), 0) + 1
+            n = sum(min(args.per_difficulty, c) for c in levels.values())
         runs = n * args.repeats * len(args.frameworks.split(","))
         print(f"\n{len(modes)} restarts, {runs} runs per mode, {runs * len(modes)} runs total")
         print("dry run: configs written and validated; server untouched")
@@ -199,6 +325,11 @@ def main() -> int:
         t0 = time.time()
         print(f"\n===== [{i}/{len(modes)}] thinking={mode} =====", flush=True)
         serve(configs[mode], out_root / f"vllm_{mode}.log")
+        if args.workers > 1:
+            if record_parallel(configs[mode], out_root / mode, args, args.workers):
+                raise SystemExit(f"parallel recording failed for mode {mode}")
+            print(f"mode {mode} done in {(time.time() - t0) / 60:.1f} min", flush=True)
+            continue
         ensure_proxy()
         rc = sh([
             PY, "-m", "agent.harness.cli",
@@ -207,6 +338,8 @@ def main() -> int:
             "--frameworks", args.frameworks,
             "--repeats", str(args.repeats),
             "--limit", str(args.limit),
+            "--per-difficulty", str(args.per_difficulty),
+            *(["--stack", args.stack] if args.stack else []),
             "--out", str(out_root / mode),
             "--no-timestamp",  # the sweep root is already timestamped
             "--tool-mode", args.tool_mode,
@@ -217,8 +350,11 @@ def main() -> int:
         print(f"mode {mode} done in {(time.time() - t0) / 60:.1f} min", flush=True)
 
     print(f"\n===== export =====", flush=True)
+    run_dirs = ([str(d) for m in modes for d in sorted((out_root / m).glob("w*"))]
+                if args.workers > 1 else [str(out_root / m) for m in modes])
     sh([PY, "scripts/export_csv.py",
-        "--runs", *[str(out_root / m) for m in modes],
+        "--runs", *run_dirs,
+        "--tasks", args.tasks,
         "--out", str(out_root / "results.csv"), "--calls", "--no-timestamp"])
     print(f"\nsweep finished in {(time.time() - started) / 60:.1f} min -> {out_root}/results.csv")
     print(f"vLLM is still serving the last mode ({modes[-1]}); "

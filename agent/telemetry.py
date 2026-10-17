@@ -1,4 +1,4 @@
-"""The six telemetry record types and a JSONL writer.
+"""Telemetry records, including the execution plan, and an append-only writer.
 
 Schema mirrors the Phase 1 methodology doc. Records join on run_id. Nothing a
 framework reports about itself is trusted: llm_call rows come from the proxy,
@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-SCHEMA_VERSION = "0.4.0"
+SCHEMA_VERSION = "0.6.0"
 
 
 def new_id(prefix: str = "") -> str:
@@ -72,6 +72,8 @@ class ConfigRecord:
     temperature: float
     seed: int
     timeout_s: float
+    max_total_output_tokens: int = 0
+    accounting_policy: str = "proxy-v1"
     schema_version: str = SCHEMA_VERSION
 
 
@@ -90,6 +92,26 @@ class RunRecord:
     status: str = "completed"
     final_answer: str = ""
     error: str = ""
+    framework_status: str = ""
+    termination_reason: str = ""
+    forced_final_answer: bool = False
+    max_llm_calls: int = 0
+    max_tokens_per_call: int = 0
+    max_total_output_tokens: int = 0
+    call_cap_reached: bool = False
+    output_cap_reached: bool = False
+    per_call_output_cap_reached: bool = False
+    total_output_cap_reached: bool = False
+    output_cap_type: str = "none"
+    last_finish_reason: str = ""
+    completion_type: str = ""
+    outcome_policy_version: str = ""
+    blocked_llm_requests: int = 0
+    accounting_policy: str = ""
+    budget_enforced: bool = False
+    usage_complete: bool = True
+    session: str = ""
+    task_fingerprint: str = ""
 
     n_llm_calls: int = 0
     n_tool_calls: int = 0
@@ -145,6 +167,11 @@ class LlmCallRecord:
     payload_path: str = ""
     response_path: str = ""
     error: str = ""
+    requested_output_cap: int | None = None
+    effective_output_cap: int | None = None
+    http_status: int | None = None
+    usage_missing: bool = False
+    forced_final_answer: bool = False
     schema_version: str = SCHEMA_VERSION
 
 
@@ -166,6 +193,9 @@ class ToolCallRecord:
     # "nearest" is approximate and must be excluded or reported separately.
     fixture_match: str = ""
     fixture_similarity: float | None = None
+    # Wall-clock start (ms), so a power trace can be split into tool time,
+    # LLM time and orchestration (scripts/attribute_energy.py).
+    start_ts: float = 0.0
     schema_version: str = SCHEMA_VERSION
 
 
@@ -194,11 +224,26 @@ class EvalRecord:
     judge_version: str = ""
     rationale: str = ""
     deterministic_check_passed: bool | None = None
+    judge_id: str = ""
+    evaluation_version: str = ""
+    answer_fingerprint: str = ""
+    metric_version: str = ""
     # What judging this one metric cost: evaluation has a token bill too.
     judge_calls: int = 0
     judge_input_tokens: int = 0
     judge_output_tokens: int = 0
     judge_seconds: float = 0.0
+    schema_version: str = SCHEMA_VERSION
+
+
+@dataclass
+class PlanRecord:
+    """Persist intent before execution, so interrupted runs remain countable."""
+    session: str
+    config_id: str
+    task_id: str
+    repeat_idx: int
+    run_order_idx: int
     schema_version: str = SCHEMA_VERSION
 
 
@@ -209,6 +254,7 @@ _TABLES = {
     ToolCallRecord: "tool_call",
     HwSampleRecord: "hw_sample",
     EvalRecord: "eval",
+    PlanRecord: "plan",
 }
 
 

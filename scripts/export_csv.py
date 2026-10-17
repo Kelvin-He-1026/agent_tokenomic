@@ -25,24 +25,37 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from agent.accounting import cap_hits
+from agent.evaluation import OUTCOME_POLICY_VERSION
+
 COLUMNS = [
     # identity
-    "run_id", "config_id", "run_dir", "run_code", "framework", "framework_version",
+    "run_id", "config_id", "run_dir", "run_dir_path", "run_code", "framework", "framework_version",
+    "session", "task_fingerprint", "task_definition_matches",
     "architecture", "model_repo", "precision", "tp_size",
     "task_id", "repeat_idx", "run_order_idx", "is_first_in_dir",
     # outcome
     "status", "error", "final_answer",
-    # deterministic success (agent/scoring.py): "" when the task is judge_only
-    "task_type", "check_mode", "success", "success_detail",
+    # Unified correctness and independent presentation/execution dimensions.
+    "task_type", "check_mode", "success", "success_detail", "format_ok",
+    "difficulty", "semantic_correct", "execution_completed", "strict_success", "format_success",
+    "completion_type", "natural_completion", "outcome_policy_version",
+    "score_source", "score_state", "evaluation_version",
     # LLM judge (DeepEval, scripts/judge_runs.py); empty where not yet scored
     "judge_faithfulness", "judge_faithfulness_pass",
     "judge_task_completion", "judge_task_completion_pass",
     "judge_argument_correctness", "judge_argument_correctness_pass",
     "judge_tool_correctness", "judge_tool_correctness_pass",
     "judge_model", "judge_calls", "judge_input_tokens", "judge_output_tokens",
+    "judge_id", "judge_semantic_correctness", "judge_semantic_correctness_pass",
+    "judge_semantic_correctness_threshold", "judge_semantic_correctness_version",
     # trajectory
     "n_llm_calls", "n_tool_calls", "n_failed_tool_calls", "n_malformed_tool_calls",
     "n_tool_switches", "tools_used", "hit_step_limit",
+    "framework_status", "termination_reason", "forced_final_answer", "call_cap_reached",
+    "output_cap_reached", "blocked_llm_requests", "budget_enforced", "accounting_policy",
+    "per_call_output_cap_reached", "total_output_cap_reached", "output_cap_type", "last_finish_reason",
+    "usage_complete",
     # tokens
     # output_tokens = reasoning_tokens + answer_tokens. Thinking tokens are
     # generated and paid for like any other output, so they stay in the total.
@@ -61,6 +74,7 @@ COLUMNS = [
     # provenance
     "system_prompt_hash", "tool_schema_hash", "tool_parser", "reasoning_parser",
     "thinking_setting", "reasoning_effort", "seed", "temperature", "max_llm_calls",
+    "max_tokens", "max_total_output_tokens", "task_timeout_s",
     "start_ts", "end_ts", "harness_version", "schema_version",
 ]
 
@@ -80,12 +94,14 @@ def pct(part: float, whole: float) -> float | str:
 
 
 TASKS: dict[str, dict[str, Any]] = {}
+PRIMARY_JUDGE_ID = ""
 
 
 def load_tasks(path: str) -> None:
     """Task annotations, so each run can be scored against its answer check."""
     p = Path(path)
     if p.exists():
+        TASKS.clear()
         TASKS.update({t["task_id"]: t for t in json.loads(p.read_text())})
 
 
@@ -114,6 +130,7 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
         cfg = configs.get(r["config_id"], {})
         calls = sorted(calls_by_run.get(r["run_id"], []), key=lambda c: c["call_idx"])
         tools = sorted(tools_by_run.get(r["run_id"], []), key=lambda t: t["tool_idx"])
+        r = {**r, **cap_hits(r, calls, cfg)}
 
         reasoning_chars = sum(c.get("reasoning_chars", 0) or 0 for c in calls)
         reasoning_tokens = r["reasoning_tokens"]
@@ -127,7 +144,10 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
             "run_id": r["run_id"],
             "config_id": r["config_id"],
             "run_dir": run_dir.name,
+            "run_dir_path": str(run_dir.resolve()),
             "run_code": r.get("run_code", ""),
+            "session": r.get("session", ""),
+            "task_fingerprint": r.get("task_fingerprint", ""),
             "framework": cfg.get("framework", ""),
             "framework_version": cfg.get("framework_version", ""),
             "architecture": cfg.get("architecture", ""),
@@ -142,8 +162,11 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
             "status": r["status"],
             "error": r.get("error", "")[:200],
             "final_answer": " ".join(r.get("final_answer", "").split())[:500],
-            **_success(r, [t["tool_name"] for t in tools]),
-            **_judge(evals_by_run.get(r["run_id"], [])),
+            **_success(r, [t["tool_name"] for t in tools], evals_by_run.get(r["run_id"], [])),
+            **_judge(evals_by_run.get(r["run_id"], []), TASKS.get(r["task_id"]), r.get("final_answer", "")),
+            "difficulty": TASKS.get(r["task_id"], {}).get("difficulty", ""),
+            "completion_type": r["completion_type"],
+            "outcome_policy_version": OUTCOME_POLICY_VERSION,
 
             "n_llm_calls": r["n_llm_calls"],
             "n_tool_calls": r["n_tool_calls"],
@@ -152,6 +175,19 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
             "n_tool_switches": r["n_tool_switches"],
             "tools_used": "|".join(t["tool_name"] for t in tools),
             "hit_step_limit": r["status"] == "step_limit",
+            "framework_status": r.get("framework_status", r["status"]),
+            "termination_reason": r.get("termination_reason", "legacy_unknown"),
+            "forced_final_answer": r.get("forced_final_answer", False),
+            "call_cap_reached": r.get("call_cap_reached", False),
+            "output_cap_reached": r.get("output_cap_reached", False),
+            "per_call_output_cap_reached": r["per_call_output_cap_reached"],
+            "total_output_cap_reached": r["total_output_cap_reached"],
+            "output_cap_type": r["output_cap_type"],
+            "last_finish_reason": r["last_finish_reason"],
+            "blocked_llm_requests": r.get("blocked_llm_requests", 0),
+            "budget_enforced": r.get("budget_enforced", False),
+            "usage_complete": r.get("usage_complete", ""),
+            "accounting_policy": r.get("accounting_policy", "legacy_unknown"),
 
             "input_tokens": r["input_tokens"],
             "output_tokens": r["output_tokens"],
@@ -199,6 +235,9 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
             "seed": cfg.get("seed", ""),
             "temperature": cfg.get("temperature", ""),
             "max_llm_calls": cfg.get("max_llm_calls", ""),
+            "max_tokens": cfg.get("max_tokens", ""),
+            "max_total_output_tokens": cfg.get("max_total_output_tokens", ""),
+            "task_timeout_s": cfg.get("timeout_s", ""),
             "start_ts": r["start_ts"],
             "end_ts": r["end_ts"],
             "harness_version": r.get("harness_version", ""),
@@ -207,50 +246,138 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def _judge(evals: list[dict[str, Any]]) -> dict[str, Any]:
+def _judge(evals: list[dict[str, Any]], task: dict | None = None, answer: str = "") -> dict[str, Any]:
     """Latest judge verdict per metric, and the total cost of judging this run."""
     out: dict[str, Any] = {}
+    if task is not None:
+        from agent.evaluation import SEMANTIC_METRIC, valid_semantic_judgment
+        evals = [e for e in evals if e.get("metric_name") != SEMANTIC_METRIC or valid_semantic_judgment(e, task, answer)]
+    identities = {e.get("judge_id", e.get("judge_model", "")) for e in evals}
+    if PRIMARY_JUDGE_ID:
+        evals = [e for e in evals if e.get("judge_id") == PRIMARY_JUDGE_ID]
+    elif len(identities) > 1:
+        return {"judge_model": "multiple: select --judge-id"}
     latest: dict[str, dict] = {}
     for e in evals:
         latest[e["metric_name"]] = e  # rows are appended, so the last one wins
     for name, e in latest.items():
         out[f"judge_{name}"] = e["score"]
         out[f"judge_{name}_pass"] = e["passed"]
+        if name == "semantic_correctness":
+            out["judge_semantic_correctness_threshold"] = e.get("threshold", "")
+            out["judge_semantic_correctness_version"] = e.get("metric_version", "")
     if latest:
         out["judge_model"] = next(iter(latest.values())).get("judge_model", "")
+        out["judge_id"] = next(iter(latest.values())).get("judge_id", "")
         out["judge_calls"] = sum(e.get("judge_calls", 0) for e in latest.values())
         out["judge_input_tokens"] = sum(e.get("judge_input_tokens", 0) for e in latest.values())
         out["judge_output_tokens"] = sum(e.get("judge_output_tokens", 0) for e in latest.values())
     return out
 
 
-def _success(r: dict[str, Any], tools_used: list[str]) -> dict[str, Any]:
-    from agent.scoring import score
+def _success(r: dict[str, Any], tools_used: list[str], evals: list[dict] = ()) -> dict[str, Any]:
+    from agent.evaluation import evaluate
+    from agent.evaluation import answer_fingerprint
 
     task = TASKS.get(r["task_id"])
     if task is None:
         return {"task_type": "", "check_mode": "", "success": "", "success_detail": "task not found"}
-    s = score(r.get("final_answer", ""), task["answer_check"], r["status"], tools_used)
-    return {
-        "task_type": task.get("task_type", ""),
-        "check_mode": s.mode,
-        "success": "" if s.success is None else s.success,
-        "success_detail": s.detail[:160],
-    }
+    fingerprint = r.get("task_fingerprint")
+    matches = fingerprint == answer_fingerprint(task, "") if fingerprint else ""
+    if matches is False:
+        return {"task_type": task.get("task_type", ""), "check_mode": task["answer_check"]["mode"],
+                "success": "", "success_detail": "stored task definition differs; rerun with this task version",
+                "score_state": "task_mismatch", "task_definition_matches": False}
+    return {**evaluate(task, r.get("final_answer", ""), r["status"], tools_used, evals, PRIMARY_JUDGE_ID,
+                       completion_type=r.get("completion_type")),
+            "task_definition_matches": matches}
+
+
+def quality_report(dirs: list[Path], rows: list[dict]) -> dict:
+    """Account for planned runs even when an interrupted harness wrote no result."""
+    cells = []
+    for directory in dirs:
+        plans = read_jsonl(directory / "plan.jsonl")
+        local = [r for r in rows if r.get("run_dir_path", r["run_dir"]) == str(directory.resolve())
+                 or (not r.get("run_dir_path") and r["run_dir"] == directory.name)]
+        groups = {(r["config_id"], r.get("session", "")) for r in local + plans}
+        for config_id, session in sorted(groups):
+            actual = [r for r in local if (r["config_id"], r.get("session", "")) == (config_id, session)]
+            planned = [r for r in plans if (r["config_id"], r.get("session", "")) == (config_id, session)]
+            def key(r):
+                return r["task_id"], r["repeat_idx"], r["run_order_idx"]
+            expected, observed = {key(r) for r in planned}, {key(r) for r in actual}
+            pending = sum(r.get("score_state") in ("pending_judge", "ambiguous_judge", "task_mismatch") for r in actual)
+            wins = sum(r.get("success") is True for r in actual)
+            duplicate_count = len(actual) - len({(r["task_id"], r["repeat_idx"]) for r in actual})
+            dataset_complete = {r["task_id"] for r in actual} == set(TASKS)
+            plan_complete = (bool(planned) and expected == observed and not duplicate_count
+                             and len(planned) == len({(r["task_id"], r["repeat_idx"]) for r in planned}))
+            confirmed_rate = wins / len(planned) if plan_complete else None
+            cells.append({"run_dir": str(directory.resolve()), "config_id": config_id, "session": session,
+                          "expected_dataset_tasks": len(TASKS), "observed_tasks": len({r['task_id'] for r in actual}),
+                          "planned_runs": len(planned) if planned else None, "observed_runs": len(actual),
+                          "missing_runs": [list(k) for k in sorted(expected - observed)],
+                          "unexpected_runs": [list(k) for k in sorted(observed - expected)] if planned else [],
+                          "duplicate_runs": duplicate_count, "pending_judgments_or_task_mismatch": pending,
+                          "semantic_scored": sum(r.get("semantic_correct", "") in (True, False) for r in actual),
+                          "unscorable_format": sum(r.get("score_state") == "unscorable_format" for r in actual),
+                          "format_failures": sum(r.get("format_ok") is False for r in actual),
+                          "confirmed_successes": wins, "confirmed_success_rate": confirmed_rate,
+                          "plan_complete": plan_complete,
+                          "selected_quality_complete": plan_complete and pending == 0,
+                          "provisional": not plan_complete or pending > 0,
+                          "strict_successes": sum(r.get("strict_success") is True for r in actual),
+                          "strict_success_rate": sum(r.get("strict_success") is True for r in actual) / len(planned) if plan_complete else None,
+                          "completion_types": {name: sum(r.get("completion_type") == name for r in actual)
+                                               for name in ("natural_completion", "forced_final", "step_limit", "truncated", "timeout", "error", "unknown_completion")},
+                          "per_call_output_cap_hits": sum(r.get("per_call_output_cap_reached") is True for r in actual),
+                          "total_output_cap_hits": sum(r.get("total_output_cap_reached") is True for r in actual),
+                          "quality_complete": dataset_complete and plan_complete and pending == 0,
+                          "resource_accounting_complete": bool(actual) and all(r.get("budget_enforced") is True
+                              and r.get("usage_complete") is True for r in actual),
+                          "total_agent_tokens": sum(r["total_tokens"] for r in actual),
+                          "total_agent_seconds": sum(r["e2e_ms"] for r in actual) / 1000})
+    return {"dataset_tasks": len(TASKS), "primary_judge_id": PRIMARY_JUDGE_ID,
+            "outcome_policy_version": OUTCOME_POLICY_VERSION, "cells": cells}
+
+
+def select_primary_judge(evals: list[dict], requested: str = "") -> str:
+    from agent.evaluation import EVALUATION_VERSION, SEMANTIC_METRIC, SEMANTIC_METRIC_VERSION
+    if requested:
+        return requested
+    identities = {e["judge_id"] for e in evals if e.get("metric_name") == SEMANTIC_METRIC
+                  and e.get("evaluation_version") == EVALUATION_VERSION
+                  and e.get("metric_version") == SEMANTIC_METRIC_VERSION
+                  and e.get("judge_id") and e.get("passed") is not None}
+    if len(identities) > 1:
+        raise ValueError("multiple semantic judges in this export; select --judge-id from " + ", ".join(sorted(identities)))
+    return next(iter(identities), "")
+
+
+def cell_key(r: dict) -> str:
+    """Never average observations from different resource policies together."""
+    return (f"{(r['model_repo'] or '?').split('/')[-1]} {r['framework']} "
+            f"{r['thinking_setting']}/{r.get('reasoning_effort') or '-'} "
+            f"calls={r.get('max_llm_calls', '?')} output={r.get('max_tokens', '?')} "
+            f"total={r.get('max_total_output_tokens', '?')} timeout={r.get('task_timeout_s', '?')} "
+            f"{r.get('accounting_policy', '?')}/{r.get('budget_enforced', False)} cfg={r.get('config_id', '?')}")
 
 
 def export_calls(dirs: list[Path], out: Path) -> int:
     """Long-form per-LLM-call CSV, for looking at trajectories step by step."""
-    cols = ["run_dir", "run_id", "call_idx", "request_ts", "ttft_ms", "latency_ms",
+    cols = ["run_dir", "run_dir_path", "run_id", "call_idx", "request_ts", "ttft_ms", "latency_ms",
             "prompt_tokens", "completion_tokens", "reasoning_tokens", "answer_tokens",
             "reasoning_chars", "answer_chars", "cached_tokens",
             "tpot_ms", "finish_reason", "n_tool_calls_requested", "tool_names",
             "n_messages", "prompt_chars", "contains_reasoning_in_history"]
+    cols += ["requested_output_cap", "effective_output_cap", "http_status", "usage_missing", "forced_final_answer", "error"]
     rows = []
     for d in dirs:
         for c in read_jsonl(d / "llm_call.jsonl"):
             row = {k: c.get(k, "") for k in cols}
             row["run_dir"] = d.name
+            row["run_dir_path"] = str(d.resolve())
             row["tool_names"] = "|".join(c.get("tool_names") or [])
             row["answer_tokens"] = (c.get("completion_tokens") or 0) - (c.get("reasoning_tokens") or 0)
             rows.append(row)
@@ -265,18 +392,12 @@ def export_calls(dirs: list[Path], out: Path) -> int:
 def summarize(rows: list[dict[str, Any]]) -> None:
     warm = [r for r in rows if not r["is_first_in_dir"] and r["status"] == "completed"]
     print(f"\n{len(rows)} run(s); {len(warm)} completed and not first-in-dir")
-    if not warm:
-        return
 
     # Grouped by everything that defines a cell, so a sweep over thinking modes
     # (or models) is never averaged together into one row.
     by_fw: dict[str, list[dict]] = {}
     for r in warm:
-        think = r["thinking_setting"] or "?"
-        if r.get("reasoning_effort"):
-            think += f"/{r['reasoning_effort']}"
-        model = (r["model_repo"] or "?").split("/")[-1]
-        key = f"{model[:22]} {r['framework'] or '?'} {think}"
+        key = cell_key(r)
         by_fw.setdefault(key, []).append(r)
 
     print(f"\n{'cell':45s} {'n':>3s} {'e2e_s':>7s} {'llm%':>6s} {'orch%':>6s} "
@@ -298,27 +419,32 @@ def summarize(rows: list[dict[str, Any]]) -> None:
               f"{len({r['task_id'] for r in rs}):6d}")
 
     # Cost per successful task: EVERY run's tokens (failures cost too) divided
-    # by the number of successful runs. Only deterministically scored tasks.
+    # by confirmed successful runs. Pending/failed runs still incur cost.
     # Warm-up runs are included here: warm-up inflates timing (imports, JIT),
     # not correctness or token counts, and with one repeat per task, dropping
     # it would drop that task from every cell.
-    print(f"\n{'cell':45s} {'scored':>7s} {'success':>8s} {'tok/success':>12s} {'s/success':>10s}")
+    print(f"\n{'cell':45s} {'all':>5s} {'pending':>7s} {'confirmed':>9s} {'tok/success':>12s} {'s/success':>10s}")
     print("-" * 86)
     cells: dict[str, list[dict]] = {}
     for r in rows:
-        think = r["thinking_setting"] or "?"
-        if r.get("reasoning_effort"):
-            think += f"/{r['reasoning_effort']}"
-        cells.setdefault(f"{(r['model_repo'] or '?').split('/')[-1][:22]} {r['framework']} {think}", []).append(r)
+        cells.setdefault(cell_key(r), []).append(r)
     for key, rs in sorted(cells.items()):
         scored = [r for r in rs if r["success"] != ""]
         wins = sum(r["success"] is True for r in scored)
-        tok = sum(r["total_tokens"] for r in scored)
-        sec = sum(r["e2e_ms"] for r in scored) / 1000
-        print(f"{key:45s} {len(scored):7d} {wins / len(scored) if scored else 0:8.0%} "
+        tok = sum(r["total_tokens"] for r in rs)
+        sec = sum(r["e2e_ms"] for r in rs) / 1000
+        pending = sum(r.get("score_state") in ("pending_judge", "ambiguous_judge") for r in rs)
+        print(f"{key:45s} {len(rs):5d} {pending:7d} {wins / len(rs):9.0%} "
               f"{(tok / wins) if wins else float('nan'):12,.0f} {(sec / wins) if wins else float('nan'):10.1f}")
-    print("(tok/success and s/success charge failed runs to the successes, as the metric requires;\n"
-          " warm-up runs are included, adding ~1 s per cell to s/success)")
+        unknown = sum(r.get("score_state") == "unscorable_format" for r in rs)
+        print(f"  task coverage={len({r['task_id'] for r in rs})}/{len(TASKS)} loaded tasks")
+        print(f"  semantic coverage={sum(r.get('semantic_correct') in (True, False) for r in rs)}/{len(rs)}; "
+              f"unscorable_format={unknown}; format failures={sum(r.get('format_ok') is False for r in rs)}")
+        print(f"  strict successes={sum(r.get('strict_success') is True for r in rs)}/{len(rs)}; "
+              + ", ".join(f"{kind}={sum(r.get('completion_type') == kind for r in rs)}"
+                          for kind in ("natural_completion", "forced_final", "step_limit", "truncated")))
+    print("(All run costs, including failed and pending runs, are charged to confirmed successes.\n"
+          " Rates and costs remain provisional while judgments are pending. Warm-up runs are included.)")
 
     print("\nMeans are shown for scale, but agent costs are heavy-tailed: one looping task")
     print("can dominate a mean. Compare tok_med (typical) and tok_max (worst) before")
@@ -333,7 +459,7 @@ def summarize(rows: list[dict[str, Any]]) -> None:
 
     excluded = [r for r in rows if r["is_first_in_dir"] or r["status"] != "completed"]
     if excluded:
-        print(f"\nnot in the table above ({len(excluded)}): "
+        print(f"\nnot in the completed-run timing table ({len(excluded)}; retained in quality/cost totals): "
               + ", ".join(f"{r['task_id']}({'warm-up' if r['is_first_in_dir'] else r['status']})"
                           for r in excluded[:6]))
     missing = [r for r in rows if r["reasoning_tokens_missing"]]
@@ -354,16 +480,23 @@ def main() -> int:
     ap.add_argument("--calls", action="store_true", help="also write a per-LLM-call CSV")
     ap.add_argument("--tasks", default="dataset/tasks/phase1.json",
                     help="task annotations to score answers against")
+    ap.add_argument("--judge-id", default="", help="select primary judge when multiple judges are stored")
     args = ap.parse_args()
+    global PRIMARY_JUDGE_ID
+    PRIMARY_JUDGE_ID = args.judge_id
 
     load_tasks(args.tasks)
     dirs: list[Path] = []
     for pattern in args.runs:
         for p in sorted(glob.glob(pattern)):
-            if (Path(p) / "run.jsonl").exists():
+            if (Path(p) / "run.jsonl").exists() or (Path(p) / "plan.jsonl").exists():
                 dirs.append(Path(p))
     if not dirs:
-        raise SystemExit(f"no run directories with run.jsonl matched {args.runs}")
+        raise SystemExit(f"no run directories with run.jsonl or plan.jsonl matched {args.runs}")
+    try:
+        PRIMARY_JUDGE_ID = select_primary_judge([e for d in dirs for e in read_jsonl(d / "eval.jsonl")], args.judge_id)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
 
     rows: list[dict[str, Any]] = []
     for d in dirs:
@@ -371,7 +504,7 @@ def main() -> int:
         rows += found
         print(f"  {d}: {len(found)} run(s)")
 
-    rows.sort(key=lambda r: (r["run_dir"], r["run_order_idx"]))
+    rows.sort(key=lambda r: (r["run_dir_path"], r["run_order_idx"]))
     out = Path(args.out)
     if not args.no_timestamp:
         # Exports never overwrite each other; results_20260918_193012.csv etc.
@@ -383,6 +516,9 @@ def main() -> int:
         w.writeheader()
         w.writerows(rows)
     print(f"\nwrote {out}  ({len(rows)} rows x {len(COLUMNS)} columns)")
+    report_path = out.with_suffix(".quality.json")
+    report_path.write_text(json.dumps(quality_report(dirs, rows), indent=2) + "\n")
+    print(f"wrote {report_path} (planned-run coverage and quality completeness)")
 
     if args.calls:
         calls_out = out.with_name(out.stem + "_llm_calls.csv")

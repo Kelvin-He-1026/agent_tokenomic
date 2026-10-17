@@ -6,11 +6,12 @@
 # Stops by port, never `pkill -f`: that pattern would match the caller's own
 # command line and kill the shell running it.
 set -uo pipefail
-pid=$(ss -lptn "sport = :8100" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1 || true)
+eval "$(cd "$(dirname "$0")/.." && .venv/bin/python -m agent.stacks --shell)" || exit 1
+pid=$(ss -lptn "sport = :$PROXY_PORT" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | head -1 || true)
 if [[ -n "${pid:-}" ]]; then
-  kill "$pid" && echo "stopped proxy on 8100 (pid $pid)"
+  kill "$pid" && echo "stopped proxy on $PROXY_PORT (pid $pid)"
 else
-  echo "nothing on port 8100"
+  echo "nothing on port $PROXY_PORT"
 fi
 
 # The upstream on 8000 is the mock during a smoke test and vLLM during a real

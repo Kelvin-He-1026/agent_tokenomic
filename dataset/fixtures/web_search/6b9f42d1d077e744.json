@@ -1,0 +1,11 @@
+{
+  "fixture_id": "6b9f42d1d077e744",
+  "tool": "web_search",
+  "args": {
+    "query": "DRAGIN paper \"distractor\" \"full-wiki\" OR \"fullwiki\" test setting"
+  },
+  "normalized_key": "web_search|query=distractor dragin full fullwiki paper setting test wiki",
+  "result": "Summary: The sources provide information on Paper Dragons in various contexts. The Dragon Village Collection Wiki mentions Paper Dragons obtained at the \"Paper Dragon Festival\" and lists specific types like Charred, Blank Paper, Insulating Paper, and Paper Boat. A YouTube video offers tips on making a Paper Dragon and showcases a remake after two years. TikTok videos feature quizzes and puppet designs related to paper dragons, including name ideas for a crescent moon paper dragon puppet. WikiHow provides tutorials on making a DIY Paper Dragon Puppet. No specific mention of a \"DRAGIN paper distractor full-wiki OR fullwiki test setting\" is given in the sources.\n\nSources:\n\n1. Paper Dragon - Dragon Village Collection Wiki - Fandom\n   URL: https://dragon-village-collection.fandom.com/wiki/Paper_Dragon\n   All Paper Dragon obtained in this way will have an obtainment location of \"Paper Dragon Festival\". The Charred, Blank Paper, Insulating Paper, and Paper Boat\n\n2. 21 PAPER DRAGON TIPS You NEED to KNOW! \ud83d\ude31\n   URL: https://www.youtube.com/watch?v=xe9uX6jizDc\n   21 PAPER DRAGON TIPS You NEED to KNOW! Here is how I made a Paper Dragon REMAKE after 2 YEARS!\n\n3. Can You Guess These 5 Paper Dragon Puppets?\n   URL: https://www.tiktok.com/@decas_puppets/video/7502628611015314719?lang=en\n   The Old Dragon Quiz: How Many Can You Guess? Are you a fan of paper dragon puppets? This is your chance to test your knowledge!\n\n4. How to Make a DIY Paper Dragon Puppet: 2 Easy Tutorials\n   URL: https://www.wikihow.com/Make-a-Paper-Dragon-Puppet\n   Draw a dragon head on a piece of paper and color it in, then repeat the process on another piece of paper so you have both sides of head. Cut out the designs\n\n5. Dragon Puppet: Crescent Moon Paper Dragon Name Ideas\n   URL: https://www.tiktok.com/@._cosmic.dragons/video/7665210234629016863\n   This covers name and design inspiration for a crescent moon paper dragon puppet intended for a dragon trade.",
+  "recorded_at": "2026-10-16T20:14:21.900047+00:00",
+  "recorded_by": "openai_agents/Qwen/Qwen3.8-27B"
+}

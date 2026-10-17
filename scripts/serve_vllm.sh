@@ -31,7 +31,18 @@ eval "$SETTINGS"
 MODEL_PATH="$(pwd)/model/${LOCAL_DIR}"
 [[ -d "$MODEL_PATH" ]] || { echo "missing weights: $MODEL_PATH (run scripts/fetch_models.py)"; exit 1; }
 
-PORT=${PORT:-8000}
+# Which GPU, port and CPU node: $ATK_STACK (a | b, see agent/stacks.py), or
+# the original single stack (every GPU visible, port 8000, no pinning).
+eval "$(cd "$(dirname "$0")/.." && .venv/bin/python -m agent.stacks --shell)" || exit 1
+if [[ -n "$STACK_GPUS" ]]; then
+  n_gpus=$(awk -F, '{print NF}' <<< "$STACK_GPUS")
+  if (( TP > n_gpus )); then
+    echo "stack $STACK_NAME has $n_gpus GPU(s) but this config needs tp_size=$TP; run it without ATK_STACK"
+    exit 1
+  fi
+  export CUDA_VISIBLE_DEVICES=$STACK_GPUS
+fi
+PORT=${PORT:-$VLLM_PORT}
 # Hybrid Mamba models allocate one Mamba cache block per decode sequence, so
 # vLLM's default max_num_seqs (1024) can exceed what fits and abort CUDA graph
 # capture. This also caps Phase 4 concurrency, and it changes batching, so it
@@ -60,13 +71,15 @@ ARGS=(
 [[ -n "$REASONING_PARSER" ]] && ARGS+=(--reasoning-parser "$REASONING_PARSER")
 
 echo "serving $SERVED_NAME from $MODEL_PATH  (config: $CONFIG)"
+echo "  stack=${STACK_NAME:-default} gpus=${STACK_GPUS:-all} numa=${NUMA_NODE:-unpinned}"
 echo "  tp=$TP port=$PORT tool-parser=$TOOL_PARSER reasoning-parser=${REASONING_PARSER:-none} max_num_seqs=$MAX_NUM_SEQS"
 echo "  thinking=$THINKING effort=${REASONING_EFFORT:-n/a} template-kwargs=$TEMPLATE_KWARGS"
 
 # Record what is being launched, for preflight to check against the config.
 mkdir -p output
+STACK_NAME=$STACK_NAME STACK_GPUS=$STACK_GPUS NUMA_NODE=$NUMA_NODE \
 .venv/bin/python - "$CONFIG" "$PORT" "$MAX_NUM_SEQS" <<'PY'
-import json, sys, time
+import json, os, sys, time
 from pathlib import Path
 config, port, max_num_seqs = sys.argv[1], sys.argv[2], sys.argv[3]
 sys.path.insert(0, ".")
@@ -86,6 +99,9 @@ Path(f"output/serving_{port}.json").write_text(json.dumps({
     "reasoning_effort": m.reasoning_effort,
     "chat_template_kwargs": m.chat_template_kwargs(cfg.as_of_date),
     "max_num_seqs": int(max_num_seqs),
+    "stack": os.environ.get("STACK_NAME", ""),
+    "gpus": os.environ.get("STACK_GPUS", ""),
+    "numa_node": os.environ.get("NUMA_NODE", ""),
 }, indent=2))
 PY
 
@@ -109,4 +125,5 @@ fi
 export VLLM_USE_FLASHINFER_SAMPLER=${VLLM_USE_FLASHINFER_SAMPLER:-0}
 
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
-exec "${VLLM:-.venv/bin/vllm}" serve "${ARGS[@]}"
+# $PIN is empty without a stack; with one it binds vLLM to the GPU's NUMA node.
+exec $PIN "${VLLM:-.venv/bin/vllm}" serve "${ARGS[@]}"

@@ -123,6 +123,10 @@ class SamplingConfig:
     seed: int = 1234
     stream: bool = True  # required for TTFT at the proxy
 
+    def __post_init__(self) -> None:
+        if isinstance(self.max_tokens, bool) or not isinstance(self.max_tokens, int) or self.max_tokens < 1:
+            raise ValueError("max_tokens must be a positive integer")
+
 
 @dataclass(frozen=True)
 class LimitsConfig:
@@ -137,6 +141,19 @@ class LimitsConfig:
     task_timeout_s: float = 600.0
     client_retries: int = 0
     parallel_tool_calls: bool = False
+    # Zero derives a shared run ceiling of max_llm_calls * sampling.max_tokens.
+    max_total_output_tokens: int = 0
+    accounting_policy: str = "proxy-v1"
+
+    def __post_init__(self) -> None:
+        for key in ("max_llm_calls", "max_total_output_tokens"):
+            value = getattr(self, key)
+            if isinstance(value, bool) or not isinstance(value, int) or value < (1 if key == "max_llm_calls" else 0):
+                raise ValueError(f"invalid {key}: {value!r}")
+        if self.request_timeout_s <= 0 or self.task_timeout_s <= 0:
+            raise ValueError("timeouts must be positive")
+        if self.accounting_policy != "proxy-v1":
+            raise ValueError("unsupported accounting_policy")
 
 
 @dataclass(frozen=True)
@@ -249,4 +266,6 @@ def _plain(obj: Any) -> Any:
 
 # Filled in after the fact; they describe the environment rather than define
 # the cell, so they must not change the config_id.
-_PROVENANCE = {"framework_version", "vllm_version", "hardware_id", "numa_pinning"}
+# base_url too: which stack's proxy a run went through says where it ran, not
+# what was run, so the same cell on stack a and stack b shares one config_id.
+_PROVENANCE = {"framework_version", "vllm_version", "hardware_id", "numa_pinning", "base_url"}
