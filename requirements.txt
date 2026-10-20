@@ -21,6 +21,8 @@ huggingface_hub
 # tools
 requests
 tavily-python
+# free web_search backend (GAIA_stack config: web_search_backend: ddg)
+ddgs
 langchain-chroma
 langchain-huggingface
 # backend langchain-huggingface loads the embedding model with
@@ -28,6 +30,8 @@ sentence-transformers
 
 # index build (scripts/build_index.py)
 pypdf
+# GAIA attachments: old-format .xls spreadsheets (read_file)
+xlrd
 langchain-text-splitters
 
 # evaluation

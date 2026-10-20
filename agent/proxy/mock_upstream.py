@@ -12,6 +12,7 @@ overhead directly.
 from __future__ import annotations
 
 import json
+import re
 import time
 import uuid
 from typing import Any
@@ -54,7 +55,8 @@ async def chat_completions(request: Request):
         }
         finish_reason = "stop"
     else:
-        name, args = _pick_tool(question)
+        offered = [t.get("function", {}).get("name") for t in payload.get("tools") or []]
+        name, args = _pick_tool(question, offered)
         message = {
             "role": "assistant",
             "content": "",
@@ -142,12 +144,27 @@ def _last_user_text(messages: list[dict[str, Any]]) -> str:
     return ""
 
 
-def _pick_tool(question: str) -> tuple[str, dict[str, Any]]:
+ATTACHMENT_RE = re.compile(r"Attached file: (\S+?)\.? Open it with the read_file tool")
+
+
+def _pick_tool(question: str, offered: list[str] | None = None) -> tuple[str, dict[str, Any]]:
+    """Pick by keyword, but only among the tools the request offers (a task set
+    can offer its own list, e.g. GAIA's web_search/fetch_url/read_file)."""
+    offered = [n for n in offered or [] if n]
+    usable = (lambda n: n in offered) if offered else (lambda n: True)
+    query = {"query": question[:120]}
+    attached = ATTACHMENT_RE.search(question)
+    if attached and usable("read_file"):
+        return "read_file", {"file_name": attached.group(1)}
     q = question.lower()
     for keywords, name, args in KEYWORD_TOOLS:
-        if any(k in q for k in keywords):
-            return name, (args if args is not None else {"query": question[:120]})
-    return DEFAULT_TOOL, {"query": question[:120]}
+        if usable(name) and any(k in q for k in keywords):
+            return name, (args if args is not None else query)
+    if usable(DEFAULT_TOOL):
+        return DEFAULT_TOOL, query
+    if usable("web_search"):
+        return "web_search", query
+    return offered[0], query
 
 
 def _answer_from(messages: list[dict[str, Any]], question: str) -> str:

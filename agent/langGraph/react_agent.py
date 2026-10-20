@@ -67,7 +67,7 @@ class LangGraphReActAgent:
                 description=spec["description"],
                 args_schema=spec["parameters"],
             )
-            for spec in schemas.TOOL_SCHEMAS
+            for spec in schemas.tool_specs(self.cfg.tools)
         ]
 
     # -- run ---------------------------------------------------------------

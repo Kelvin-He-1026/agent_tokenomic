@@ -27,3 +27,10 @@ output/
 # Scratch
 *.bak
 *.log
+
+# GAIA data: GAIA asks that questions and answers not be reshared. Rebuild with
+# GAIA_stack/scripts/fetch_gaia.py; only the task ids are committed. Recorded
+# fixtures quote the questions and often contain the answers.
+GAIA_stack/tasks/phase1-GAIA*.json
+GAIA_stack/documents/
+GAIA_stack/fixtures*/

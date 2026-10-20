@@ -72,19 +72,80 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
     },
 ]
 
+# Tools for open-ended agent tasks (GAIA). Offered only to a run whose config
+# lists them in `tools`, so the Phase 1 task sets keep exactly the three tools
+# above and their tool_schema_hash is unchanged.
+EXTRA_TOOL_SCHEMAS: list[dict[str, Any]] = [
+    {
+        "name": "fetch_url",
+        "description": (
+            "Fetch a web page and return its readable text (scripts, styles and markup "
+            "removed). Use it to read a page found with web_search, or a URL named in the task."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "The full http(s) URL of the page to read.",
+                }
+            },
+            "required": ["url"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "read_file",
+        "description": (
+            "Read a file attached to the task and return its contents as text. Spreadsheets "
+            "are returned sheet by sheet with cell values (and cell fill colours where set); "
+            "PDFs as text; zip archives as a list of members with the contents of the readable "
+            "ones. Images and audio cannot be read."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_name": {
+                    "type": "string",
+                    "description": "The attached file's name exactly as given in the task.",
+                }
+            },
+            "required": ["file_name"],
+            "additionalProperties": False,
+        },
+    },
+]
+
+DEFAULT_TOOLS = tuple(t["name"] for t in TOOL_SCHEMAS)
 TOOL_NAMES = [t["name"] for t in TOOL_SCHEMAS]
-BY_NAME = {t["name"]: t for t in TOOL_SCHEMAS}
+ALL_SCHEMAS = TOOL_SCHEMAS + EXTRA_TOOL_SCHEMAS
+BY_NAME = {t["name"]: t for t in ALL_SCHEMAS}
+ALL_TOOL_NAMES = [t["name"] for t in ALL_SCHEMAS]
 
 
-def tool_schema_hash() -> str:
-    """Parity evidence for row 2/3: identical in every framework."""
-    blob = json.dumps(TOOL_SCHEMAS, sort_keys=True, separators=(",", ":"))
+def tool_specs(names: tuple[str, ...] | list[str] | None = None) -> list[dict[str, Any]]:
+    """The schemas a run offers, in the order its config lists them."""
+    if not names:
+        return TOOL_SCHEMAS
+    unknown = [n for n in names if n not in BY_NAME]
+    if unknown:
+        raise ValueError(f"unknown tools {unknown}; available: {ALL_TOOL_NAMES}")
+    return [BY_NAME[n] for n in names]
+
+
+def tool_schema_hash(names: tuple[str, ...] | list[str] | None = None) -> str:
+    """Parity evidence for row 2/3: identical in every framework.
+
+    With the default tools this hashes exactly what it always did, so Phase 1
+    config_ids are unchanged.
+    """
+    blob = json.dumps(tool_specs(names), sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
 
-def openai_tools() -> list[dict[str, Any]]:
+def openai_tools(names: tuple[str, ...] | list[str] | None = None) -> list[dict[str, Any]]:
     """OpenAI function-calling wire format, for the proxy and for adapters."""
-    return [{"type": "function", "function": dict(t)} for t in TOOL_SCHEMAS]
+    return [{"type": "function", "function": dict(t)} for t in tool_specs(names)]
 
 
 def validate_args(name: str, args: dict[str, Any]) -> tuple[bool, str]:

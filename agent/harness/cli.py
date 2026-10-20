@@ -139,7 +139,7 @@ def _check_tool_parser(cfg, upstream: str, model: str) -> None:
                     "role": "user",
                     "content": "Which US economic data releases are scheduled this week? Use the tool.",
                 }],
-                "tools": schemas.openai_tools(),
+                "tools": schemas.openai_tools(cfg.tools),
                 "tool_choice": "auto",
                 "max_tokens": 1024,
                 "temperature": 0,
@@ -154,7 +154,7 @@ def _check_tool_parser(cfg, upstream: str, model: str) -> None:
     content = message.get("content") or ""
     if calls:
         name = calls[0].get("function", {}).get("name", "")
-        if name not in schemas.TOOL_NAMES:
+        if name not in [t["name"] for t in schemas.tool_specs(cfg.tools)]:
             raise SystemExit(f"tool-parser probe: model called unknown tool '{name}'")
         return
     leaked = [m for m in _RAW_TOOL_MARKERS if m in content]
@@ -413,10 +413,13 @@ def main() -> int:
 
     # Cold-loading the embedding model costs seconds and would be charged to
     # whichever run the shuffle puts first. Warm it before any timing starts.
-    from ..tools import impl
+    # A task set that does not offer retrieve (GAIA) skips it: loading the
+    # embedding model would only add idle memory and power to its runs.
+    from ..tools import impl, schemas
 
-    warm_ms = impl.warmup(cfg)
-    print(f"warmed retrieval in {warm_ms:.0f}ms")
+    if any(t["name"] == "retrieve" for t in schemas.tool_specs(cfg.tools)):
+        warm_ms = impl.warmup(cfg)
+        print(f"warmed retrieval in {warm_ms:.0f}ms")
 
     plan = build_plan(tasks, frameworks, args.repeats, args.seed)
     for idx, (task, repeat, framework) in enumerate(plan):

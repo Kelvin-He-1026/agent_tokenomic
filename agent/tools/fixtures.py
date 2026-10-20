@@ -162,7 +162,8 @@ class FixtureStore:
     def _fixed_args(args: dict[str, Any]) -> dict[str, Any]:
         return {k: v for k, v in args.items() if k not in FREE_TEXT_ARGS}
 
-    def save(self, tool_name: str, args: dict[str, Any], result: str, source: str = "") -> str:
+    def save(self, tool_name: str, args: dict[str, Any], result: str, source: str = "",
+             backend: str = "") -> str:
         fid = fixture_id(tool_name, args)
         p = self.path(tool_name, fid)
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -179,6 +180,7 @@ class FixtureStore:
                     "result": result,
                     "recorded_at": datetime.now(timezone.utc).isoformat(),
                     "recorded_by": source,  # which model's probe produced this query
+                    **({"backend": backend} if backend else {}),  # e.g. which search engine
                 },
                 indent=2,
             )

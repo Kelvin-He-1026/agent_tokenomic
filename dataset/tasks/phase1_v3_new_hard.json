@@ -1,0 +1,2240 @@
+[
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-001",
+    "question": "In the DRAGIN paper's main results, first find the backbone LLM whose DRAGIN exact-match score on HotpotQA is highest. For that backbone only, find the dataset on which DRAGIN triggers the fewest retrievals per question. On that dataset, with that backbone, which method other than DRAGIN has the highest score, and by how many points (score x 100) does DRAGIN exceed it? Give the margin to one decimal place.\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{backbone: string | null, dataset: string | null, strongest_other_method: string | null, dragin_margin_points: number | null}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"backbone\":\"Llama2-13b-chat\",\"dataset\":\"2WikiMultihopQA\",\"strongest_other_method\":\"FS-RAG\",\"dragin_margin_points\":3.4}",
+    "reference_context": "[D_results] HotpotQA EM for DRAGIN: Llama2-13b-chat 0.314 (highest), Vicuna 0.288, Llama2-7b 0.232. Llama2-13b retrievals per question: 2Wiki 2.631 (fewest), HotpotQA 3.505, StrategyQA 4.786, IIRC 2.829. On 2Wiki with Llama2-13b the best other method is FS-RAG 0.270; DRAGIN 0.304, margin 3.4 points.",
+    "reference_explanation": "HotpotQA EM for DRAGIN: Llama2-13b-chat 0.314 (highest), Vicuna 0.288, Llama2-7b 0.232. Llama2-13b retrievals per question: 2Wiki 2.631 (fewest), HotpotQA 3.505, StrategyQA 4.786, IIRC 2.829. On 2Wiki with Llama2-13b the best other method is FS-RAG 0.270; DRAGIN 0.304, margin 3.4 points.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "backbone": {
+              "type": "string",
+              "value": "Llama2-13b-chat",
+              "aliases": [
+                "LLaMA2-13B-Chat",
+                "L13B",
+                "Llama-2-13b-chat",
+                "Llama-2-13B-Chat",
+                "LLaMA-2-13B-Chat",
+                "Llama2-13B-Chat",
+                "Llama 2 13B Chat",
+                "Llama2 13b chat"
+              ]
+            },
+            "dataset": {
+              "type": "string",
+              "value": "2WikiMultihopQA",
+              "aliases": [
+                "2WikiMultiHopQA",
+                "2Wiki",
+                "2WikiMQA",
+                "2-WikiMultihopQA",
+                "2WikiMHQA"
+              ]
+            },
+            "strongest_other_method": {
+              "type": "string",
+              "value": "FS-RAG",
+              "aliases": [
+                "FSRAG",
+                "FS RAG"
+              ]
+            },
+            "dragin_margin_points": {
+              "type": "number",
+              "value": 3.4,
+              "tolerance": 0.05,
+              "integer": false
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 4,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-001 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 2,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "dependent_retrieval",
+      "comparison",
+      "calculation",
+      "filtering"
+    ],
+    "evidence": [
+      {
+        "source": "documents/Dynamic RAG by TsinguaU.pdf",
+        "section": "Table 2",
+        "sha256": "02807e9427f7e24093b1ce3e9f3be63b671cc4e218ff04e682c86b6475e63bf3"
+      },
+      {
+        "source": "documents/Dynamic RAG by TsinguaU.pdf",
+        "section": "Table 3",
+        "sha256": "02807e9427f7e24093b1ce3e9f3be63b671cc4e218ff04e682c86b6475e63bf3"
+      }
+    ],
+    "evidence_family": "D_results",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "DRAGIN Table 2 HotpotQA EM per backbone",
+        "depends_on": []
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "DRAGIN Table 3 retrieval counts for that backbone",
+        "depends_on": [
+          0
+        ]
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "Table 2 scores on the selected dataset",
+        "depends_on": [
+          0,
+          1
+        ]
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-001"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-001"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-005",
+    "question": "The Transformer paper reports its big model's English-to-French BLEU in more than one place. Give the value in its main results table and the value stated in the running text of its results section, and whether they agree. Then, for English-to-German, give the big model's BLEU gain over the base model on the development set used in its model-variations table, and on the test set used in its main results table.\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{en_fr_bleu_table: number | null, en_fr_bleu_text: number | null, values_agree: boolean | null, en_de_dev_gain: number | null, en_de_test_gain: number | null}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"en_fr_bleu_table\":41.8,\"en_fr_bleu_text\":41.0,\"values_agree\":false,\"en_de_dev_gain\":0.6,\"en_de_test_gain\":1.1}",
+    "reference_context": "[T_tables] Table 2 and the abstract give 41.8; Section 6.1 text says 41.0. Table 3 (newstest2013 dev): base 25.8, big 26.4, gain 0.6. Table 2 (newstest2014 test): 27.3 vs 28.4, gain 1.1.",
+    "reference_explanation": "Table 2 and the abstract give 41.8; Section 6.1 text says 41.0. Table 3 (newstest2013 dev): base 25.8, big 26.4, gain 0.6. Table 2 (newstest2014 test): 27.3 vs 28.4, gain 1.1.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "en_fr_bleu_table": {
+              "type": "number",
+              "value": 41.8,
+              "tolerance": 0.005,
+              "integer": false
+            },
+            "en_fr_bleu_text": {
+              "type": "number",
+              "value": 41.0,
+              "tolerance": 0.005,
+              "integer": false
+            },
+            "values_agree": {
+              "type": "boolean",
+              "value": false
+            },
+            "en_de_dev_gain": {
+              "type": "number",
+              "value": 0.6,
+              "tolerance": 0.05,
+              "integer": false
+            },
+            "en_de_test_gain": {
+              "type": "number",
+              "value": 1.1,
+              "tolerance": 0.05,
+              "integer": false
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 4,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-005 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 2,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "comparison",
+      "calculation",
+      "incomplete_evidence"
+    ],
+    "evidence": [
+      {
+        "source": "documents/Attention Is All You Need.pdf",
+        "section": "Table 2",
+        "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+      },
+      {
+        "source": "documents/Attention Is All You Need.pdf",
+        "section": "Section 6.1",
+        "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+      },
+      {
+        "source": "documents/Attention Is All You Need.pdf",
+        "section": "Table 3",
+        "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+      }
+    ],
+    "evidence_family": "T_tables",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "Transformer Table 2 big EN-FR BLEU",
+        "depends_on": []
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "Section 6.1 text EN-FR BLEU",
+        "depends_on": [
+          0
+        ]
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "Table 3 dev BLEU base and big",
+        "depends_on": [
+          0,
+          1
+        ]
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-005"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-005"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-006",
+    "question": "In the Transformer paper's main comparison table, consider only systems that have both an English-to-German BLEU score and an English-to-German training cost. Which system gives the most English-to-German BLEU per 10^18 training FLOPs, and which gives the second most? Report both ratios (BLEU per 10^18 FLOPs) to four decimal places.\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{best: {system: string | null, bleu_per_1e18_flops: number | null}, second: {system: string | null, bleu_per_1e18_flops: number | null}}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"best\":{\"system\":\"Transformer (base model)\",\"bleu_per_1e18_flops\":8.2727},\"second\":{\"system\":\"ConvS2S\",\"bleu_per_1e18_flops\":2.6208}}",
+    "reference_context": "[T_tables] EN-DE BLEU/FLOPs (x1e18): GNMT + RL 1.0696, ConvS2S 2.6208, MoE 1.3015, GNMT + RL Ensemble 0.1461, ConvS2S Ensemble 0.3423, Transformer (base model) 8.2727, Transformer (big) 1.2348. ByteNet has no cost and Deep-Att rows have no EN-DE values.",
+    "reference_explanation": "EN-DE BLEU/FLOPs (x1e18): GNMT + RL 1.0696, ConvS2S 2.6208, MoE 1.3015, GNMT + RL Ensemble 0.1461, ConvS2S Ensemble 0.3423, Transformer (base model) 8.2727, Transformer (big) 1.2348. ByteNet has no cost and Deep-Att rows have no EN-DE values.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "best": {
+              "type": "object",
+              "fields": {
+                "system": {
+                  "type": "string",
+                  "value": "Transformer (base model)",
+                  "aliases": [
+                    "Transformer (base)",
+                    "Transformer base",
+                    "Transformer base model",
+                    "base Transformer",
+                    "Transformer-base",
+                    "Transformer (base model) [this work]"
+                  ]
+                },
+                "bleu_per_1e18_flops": {
+                  "type": "number",
+                  "value": 8.2727,
+                  "tolerance": 0.001,
+                  "integer": false
+                }
+              }
+            },
+            "second": {
+              "type": "object",
+              "fields": {
+                "system": {
+                  "type": "string",
+                  "value": "ConvS2S",
+                  "aliases": [
+                    "ConvS2S [9]",
+                    "ConvS2S (single model)",
+                    "ConvS2S single"
+                  ]
+                },
+                "bleu_per_1e18_flops": {
+                  "type": "number",
+                  "value": 2.6208,
+                  "tolerance": 0.001,
+                  "integer": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 2,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-006 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 0,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "calculation",
+      "comparison",
+      "filtering",
+      "constrained_analysis"
+    ],
+    "evidence": [
+      {
+        "source": "documents/Attention Is All You Need.pdf",
+        "section": "Table 2",
+        "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+      }
+    ],
+    "evidence_family": "T_tables",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "Transformer Table 2 EN-DE BLEU and training cost for every system",
+        "depends_on": []
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-006"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-006"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-008",
+    "question": "In the HotpotQA paper's baseline results on the test sets, compute the relative drop, as a percentage of the distractor-setting value, when moving from the distractor setting to the full wiki setting, for answer EM, supporting-fact EM and joint EM (two decimals each). Which of the three drops most in relative terms?\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{answer_em_drop_pct: number | null, supporting_fact_em_drop_pct: number | null, joint_em_drop_pct: number | null, largest_relative_drop: enum(\"answer_em\", \"supporting_fact_em\", \"joint_em\") | null}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"answer_em_drop_pct\":44.5,\"supporting_fact_em_drop_pct\":77.2,\"joint_em_drop_pct\":78.16,\"largest_relative_drop\":\"joint_em\"}",
+    "reference_context": "[H_eval] Distractor test answer EM 45.46, sup EM 22.24, joint EM 12.04; full wiki test 25.23, 5.07, 2.63. Drops 44.50%, 77.20%, 78.16%.",
+    "reference_explanation": "Distractor test answer EM 45.46, sup EM 22.24, joint EM 12.04; full wiki test 25.23, 5.07, 2.63. Drops 44.50%, 77.20%, 78.16%.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "answer_em_drop_pct": {
+              "type": "number",
+              "value": 44.5,
+              "tolerance": 0.01,
+              "integer": false
+            },
+            "supporting_fact_em_drop_pct": {
+              "type": "number",
+              "value": 77.2,
+              "tolerance": 0.01,
+              "integer": false
+            },
+            "joint_em_drop_pct": {
+              "type": "number",
+              "value": 78.16,
+              "tolerance": 0.01,
+              "integer": false
+            },
+            "largest_relative_drop": {
+              "type": "string",
+              "value": "joint_em",
+              "aliases": [],
+              "choices": [
+                "answer_em",
+                "supporting_fact_em",
+                "joint_em"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 2,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-008 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 0,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "calculation",
+      "comparison"
+    ],
+    "evidence": [
+      {
+        "source": "documents/HOTPOTQA ADataset for Diverse.pdf",
+        "section": "Table 4",
+        "sha256": "1ff47fefeb264db40b96dd9044835bf3c400d318d3272eb86cf6cc3d35697023"
+      }
+    ],
+    "evidence_family": "H_eval",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "HotpotQA Table 4 test results, distractor and full wiki",
+        "depends_on": []
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-008"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-008"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-011",
+    "question": "In the ManuRAG paper's retrieved-context evaluation, for the MathQ category: which method has the highest context recall, by how many percentage points does it exceed ManuRAG4's context recall, and what is ManuRAG4's context precision? Then name the method with the highest context precision on RQ.\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{mathq_recall_leader: string | null, mathq_recall_margin_over_manurag4: number | null, manurag4_mathq_precision: number | null, rq_precision_leader: string | null}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"mathq_recall_leader\":\"RAG\",\"mathq_recall_margin_over_manurag4\":5.57,\"manurag4_mathq_precision\":93.53,\"rq_precision_leader\":\"RAGhq\"}",
+    "reference_context": "[M_context] Table 3 lists MCQ, MathQ, RQ (not the MathQ-first order of Tables 1-2). MathQ recall: RAG 67.83, ManuRAG4 62.26, RAGhq 57.00. ManuRAG4 MathQ precision 93.53. RQ precision: RAGhq 93.74 > RAG 92.24.",
+    "reference_explanation": "Table 3 lists MCQ, MathQ, RQ (not the MathQ-first order of Tables 1-2). MathQ recall: RAG 67.83, ManuRAG4 62.26, RAGhq 57.00. ManuRAG4 MathQ precision 93.53. RQ precision: RAGhq 93.74 > RAG 92.24.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "mathq_recall_leader": {
+              "type": "string",
+              "value": "RAG",
+              "aliases": [
+                "standard RAG",
+                "naive RAG",
+                "vanilla RAG",
+                "baseline RAG",
+                "plain RAG"
+              ]
+            },
+            "mathq_recall_margin_over_manurag4": {
+              "type": "number",
+              "value": 5.57,
+              "tolerance": 0.005,
+              "integer": false
+            },
+            "manurag4_mathq_precision": {
+              "type": "number",
+              "value": 93.53,
+              "tolerance": 0.005,
+              "integer": false
+            },
+            "rq_precision_leader": {
+              "type": "string",
+              "value": "RAGhq",
+              "aliases": [
+                "RAG_hq",
+                "RAG-hq",
+                "RAG hq",
+                "RAGHQ",
+                "RAG (hq)"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 2,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-011 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 0,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "filtering",
+      "comparison",
+      "calculation"
+    ],
+    "evidence": [
+      {
+        "source": "documents/ManuRAG.pdf",
+        "section": "Table 3",
+        "sha256": "50f87e72945c3bda61246be854aca14503ca9df7c2bac93c811d4a6fd70f3f05"
+      }
+    ],
+    "evidence_family": "M_context",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "ManuRAG Table 3 context recall and precision by category",
+        "depends_on": []
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-011"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-011"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-012",
+    "question": "In the ManuRAG paper, for each question category (MathQ, MCQ and RQ), name the method with the highest factual correctness in the answer-quality results and the method with the highest context precision in the retrieved-context results, and say whether they are the same method.\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{MathQ: {factual_correctness_leader: string | null, context_precision_leader: string | null, same_method: boolean | null}, MCQ: {factual_correctness_leader: string | null, context_precision_leader: string | null, same_method: boolean | null}, RQ: {factual_correctness_leader: string | null, context_precision_leader: string | null, same_method: boolean | null}}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"MathQ\":{\"factual_correctness_leader\":\"ManuRAG4\",\"context_precision_leader\":\"ManuRAG4\",\"same_method\":true},\"MCQ\":{\"factual_correctness_leader\":\"ManuRAG4\",\"context_precision_leader\":\"ManuRAG4\",\"same_method\":true},\"RQ\":{\"factual_correctness_leader\":\"ManuRAG4\",\"context_precision_leader\":\"RAGhq\",\"same_method\":false}}",
+    "reference_context": "[M_results+M_context] Factual correctness leaders: MathQ ManuRAG4 62.03, MCQ ManuRAG4 87.61, RQ ManuRAG4 45.75 (RAGhq 45.64). Context precision (Table 3, columns MCQ, MathQ, RQ): MathQ ManuRAG4 93.53, MCQ ManuRAG4 86.84, RQ RAGhq 93.74.",
+    "reference_explanation": "Factual correctness leaders: MathQ ManuRAG4 62.03, MCQ ManuRAG4 87.61, RQ ManuRAG4 45.75 (RAGhq 45.64). Context precision (Table 3, columns MCQ, MathQ, RQ): MathQ ManuRAG4 93.53, MCQ ManuRAG4 86.84, RQ RAGhq 93.74.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "MathQ": {
+              "type": "object",
+              "fields": {
+                "factual_correctness_leader": {
+                  "type": "string",
+                  "value": "ManuRAG4",
+                  "aliases": [
+                    "ManuRAG 4",
+                    "ManuRAG-4"
+                  ]
+                },
+                "context_precision_leader": {
+                  "type": "string",
+                  "value": "ManuRAG4",
+                  "aliases": [
+                    "ManuRAG 4",
+                    "ManuRAG-4"
+                  ]
+                },
+                "same_method": {
+                  "type": "boolean",
+                  "value": true
+                }
+              }
+            },
+            "MCQ": {
+              "type": "object",
+              "fields": {
+                "factual_correctness_leader": {
+                  "type": "string",
+                  "value": "ManuRAG4",
+                  "aliases": [
+                    "ManuRAG 4",
+                    "ManuRAG-4"
+                  ]
+                },
+                "context_precision_leader": {
+                  "type": "string",
+                  "value": "ManuRAG4",
+                  "aliases": [
+                    "ManuRAG 4",
+                    "ManuRAG-4"
+                  ]
+                },
+                "same_method": {
+                  "type": "boolean",
+                  "value": true
+                }
+              }
+            },
+            "RQ": {
+              "type": "object",
+              "fields": {
+                "factual_correctness_leader": {
+                  "type": "string",
+                  "value": "ManuRAG4",
+                  "aliases": [
+                    "ManuRAG 4",
+                    "ManuRAG-4"
+                  ]
+                },
+                "context_precision_leader": {
+                  "type": "string",
+                  "value": "RAGhq",
+                  "aliases": [
+                    "RAG_hq",
+                    "RAG-hq",
+                    "RAG hq",
+                    "RAGHQ",
+                    "RAG (hq)"
+                  ]
+                },
+                "same_method": {
+                  "type": "boolean",
+                  "value": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 3,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-012 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 1,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "comparison",
+      "cross_table",
+      "filtering",
+      "conditional_decision"
+    ],
+    "evidence": [
+      {
+        "source": "documents/ManuRAG.pdf",
+        "section": "Tables 1 and 2",
+        "sha256": "50f87e72945c3bda61246be854aca14503ca9df7c2bac93c811d4a6fd70f3f05"
+      },
+      {
+        "source": "documents/ManuRAG.pdf",
+        "section": "Table 3",
+        "sha256": "50f87e72945c3bda61246be854aca14503ca9df7c2bac93c811d4a6fd70f3f05"
+      }
+    ],
+    "evidence_family": "M_results+M_context",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "ManuRAG factual correctness per category",
+        "depends_on": []
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "ManuRAG Table 3 context precision per category",
+        "depends_on": [
+          0
+        ]
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-012"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-012"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-013",
+    "question": "ACE reports adaptation cost for an offline AppWorld comparison and an online FiNER comparison. (1) For the offline AppWorld comparison, compute each method's average adaptation latency per rollout (seconds per rollout) and the percentage reduction in per-rollout latency (two decimals). (2) The paper states an average adaptation-latency reduction; give the two latency reductions it averages and their mean (two decimals). (3) Give the online FiNER dollar-cost reduction percentage (two decimals), and the offline AppWorld dollar-cost reduction if the paper reports one.\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{appworld: {baseline_method: string | null, baseline_seconds_per_rollout: number | null, ace_seconds_per_rollout: number | null, per_rollout_latency_reduction_pct: number | null}, headline_average: {appworld_latency_reduction_pct: number | null, finer_latency_reduction_pct: number | null, mean_pct: number | null}, finer_dollar_reduction_pct: number | null, appworld_dollar_reduction_pct: number | null}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"appworld\":{\"baseline_method\":\"GEPA\",\"baseline_seconds_per_rollout\":37.5858,\"ace_seconds_per_rollout\":26.6583,\"per_rollout_latency_reduction_pct\":29.07},\"headline_average\":{\"appworld_latency_reduction_pct\":82.34,\"finer_latency_reduction_pct\":91.55,\"mean_pct\":86.94},\"finer_dollar_reduction_pct\":83.62,\"appworld_dollar_reduction_pct\":null}",
+    "reference_context": "[A_cost] GEPA 53898 s / 1434 rollouts = 37.5858; ACE 9517 / 357 = 26.6583; per-rollout reduction 29.07%. Headline 86.9% = mean of 82.34% (AppWorld) and 91.55% (FiNER). FiNER dollars 17.7 -> 2.9 = 83.62%. No AppWorld dollar cost is reported.",
+    "reference_explanation": "GEPA 53898 s / 1434 rollouts = 37.5858; ACE 9517 / 357 = 26.6583; per-rollout reduction 29.07%. Headline 86.9% = mean of 82.34% (AppWorld) and 91.55% (FiNER). FiNER dollars 17.7 -> 2.9 = 83.62%. No AppWorld dollar cost is reported.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "appworld": {
+              "type": "object",
+              "fields": {
+                "baseline_method": {
+                  "type": "string",
+                  "value": "GEPA",
+                  "aliases": [
+                    "ReAct + GEPA",
+                    "ReAct+GEPA"
+                  ]
+                },
+                "baseline_seconds_per_rollout": {
+                  "type": "number",
+                  "value": 37.5858,
+                  "tolerance": 0.01,
+                  "integer": false
+                },
+                "ace_seconds_per_rollout": {
+                  "type": "number",
+                  "value": 26.6583,
+                  "tolerance": 0.01,
+                  "integer": false
+                },
+                "per_rollout_latency_reduction_pct": {
+                  "type": "number",
+                  "value": 29.07,
+                  "tolerance": 0.05,
+                  "integer": false
+                }
+              }
+            },
+            "headline_average": {
+              "type": "object",
+              "fields": {
+                "appworld_latency_reduction_pct": {
+                  "type": "number",
+                  "value": 82.34,
+                  "tolerance": 0.06,
+                  "integer": false
+                },
+                "finer_latency_reduction_pct": {
+                  "type": "number",
+                  "value": 91.55,
+                  "tolerance": 0.06,
+                  "integer": false
+                },
+                "mean_pct": {
+                  "type": "number",
+                  "value": 86.94,
+                  "tolerance": 0.06,
+                  "integer": false
+                }
+              }
+            },
+            "finer_dollar_reduction_pct": {
+              "type": "number",
+              "value": 83.62,
+              "tolerance": 0.05,
+              "integer": false
+            },
+            "appworld_dollar_reduction_pct": {
+              "type": "null",
+              "public": "number"
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 4,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-013 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 2,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "calculation",
+      "incomplete_evidence",
+      "dependent_retrieval"
+    ],
+    "evidence": [
+      {
+        "source": "documents/Agentic Context Engineering.pdf",
+        "section": "Table 4",
+        "sha256": "880e354fc747d44432409ef9dc1378a9a8aab2e4a326adb8e30f6bb44ff2808d"
+      },
+      {
+        "source": "documents/Agentic Context Engineering.pdf",
+        "section": "Section 4.6",
+        "sha256": "880e354fc747d44432409ef9dc1378a9a8aab2e4a326adb8e30f6bb44ff2808d"
+      }
+    ],
+    "evidence_family": "A_cost",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "ACE Table 4 offline AppWorld latency and rollouts",
+        "depends_on": []
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "ACE online FiNER latency and dollar cost",
+        "depends_on": [
+          0
+        ]
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "ACE headline adaptation-latency claim",
+        "depends_on": [
+          0,
+          1
+        ]
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-013"
+    ],
+    "answerability": "partial",
+    "replaces": "phase1-v2-hard-013"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-017",
+    "question": "Using ACE's AppWorld ablation results, attribute the average-score gain of full offline ACE over the ReAct baseline to three parts: multi-epoch adaptation (full ACE vs ACE without multi-epoch), the Reflector (ACE without multi-epoch vs ACE without Reflector or multi-epoch), and everything else (ACE without Reflector or multi-epoch vs ReAct). In the online setting, how much does offline warmup add to the average? Finally, with multi-epoch off, does adding the Reflector raise the test-challenge TGC, and by how much does that TGC change?\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{multi_epoch_points: number | null, reflector_points: number | null, everything_else_points: number | null, online_warmup_points: number | null, reflector_raises_challenge_tgc: boolean | null, reflector_challenge_tgc_change: number | null}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"multi_epoch_points\":2.6,\"reflector_points\":1.7,\"everything_else_points\":12.7,\"online_warmup_points\":3.4,\"reflector_raises_challenge_tgc\":false,\"reflector_challenge_tgc_change\":-1.0}",
+    "reference_context": "[A_cost] Averages: ReAct 42.4; w/o Reflector or multi-epoch 55.1; w/o multi-epoch 56.8; full 59.4 (2.6 + 1.7 + 12.7 = 17.0). Online 56.1 -> 59.5 with warmup (+3.4). Test-challenge TGC: 55.9 without Reflector, 54.9 with it: -1.0.",
+    "reference_explanation": "Averages: ReAct 42.4; w/o Reflector or multi-epoch 55.1; w/o multi-epoch 56.8; full 59.4 (2.6 + 1.7 + 12.7 = 17.0). Online 56.1 -> 59.5 with warmup (+3.4). Test-challenge TGC: 55.9 without Reflector, 54.9 with it: -1.0.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "multi_epoch_points": {
+              "type": "number",
+              "value": 2.6,
+              "tolerance": 0.05,
+              "integer": false
+            },
+            "reflector_points": {
+              "type": "number",
+              "value": 1.7,
+              "tolerance": 0.05,
+              "integer": false
+            },
+            "everything_else_points": {
+              "type": "number",
+              "value": 12.7,
+              "tolerance": 0.05,
+              "integer": false
+            },
+            "online_warmup_points": {
+              "type": "number",
+              "value": 3.4,
+              "tolerance": 0.05,
+              "integer": false
+            },
+            "reflector_raises_challenge_tgc": {
+              "type": "boolean",
+              "value": false
+            },
+            "reflector_challenge_tgc_change": {
+              "type": "number",
+              "value": -1.0,
+              "tolerance": 0.05,
+              "integer": false
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 2,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-017 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 0,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "calculation",
+      "comparison",
+      "conditional_decision"
+    ],
+    "evidence": [
+      {
+        "source": "documents/Agentic Context Engineering.pdf",
+        "section": "Table 3",
+        "sha256": "880e354fc747d44432409ef9dc1378a9a8aab2e4a326adb8e30f6bb44ff2808d"
+      }
+    ],
+    "evidence_family": "A_cost",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "ACE Table 3 ablation rows, all columns",
+        "depends_on": []
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-017"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-017"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-018",
+    "question": "The HotpotQA paper analyses reasoning types in two samples: one from the dev and test sets and one from the training data. Which reasoning category changes most, in absolute percentage points, between the two samples, and what is that change (dev/test share minus training share)? Give the comparison-question share in each sample, and the comparison and yes/no shares (percent of all questions) implied by the ratios in the paper's data-collection algorithm.\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{largest_change_category: string | null, largest_change_points: number | null, comparison_share_dev_test: number | null, comparison_share_training: number | null, algorithm_comparison_share: number | null, algorithm_yes_no_share: number | null}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"largest_change_category\":\"Type II\",\"largest_change_points\":-14.0,\"comparison_share_dev_test\":27.0,\"comparison_share_training\":20.0,\"algorithm_comparison_share\":25.0,\"algorithm_yes_no_share\":12.5}",
+    "reference_context": "[H_design] Dev/test: Type I 42, Comparison 27, Type II 15, Type III 6, Other 2, single-hop 6, unanswerable 2. Training (train-medium + train-hard): Type I 38, Type II 29, Comparison 20, Other 7, Type III 2, single-hop 2, unanswerable 2. Largest change Type II 15 - 29 = -14. Algorithm 1: r1 = 0.75 bridge, so comparison 25%; yes/no ratio 0.5 of comparisons = 12.5%.",
+    "reference_explanation": "Dev/test: Type I 42, Comparison 27, Type II 15, Type III 6, Other 2, single-hop 6, unanswerable 2. Training (train-medium + train-hard): Type I 38, Type II 29, Comparison 20, Other 7, Type III 2, single-hop 2, unanswerable 2. Largest change Type II 15 - 29 = -14. Algorithm 1: r1 = 0.75 bridge, so comparison 25%; yes/no ratio 0.5 of comparisons = 12.5%.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "largest_change_category": {
+              "type": "string",
+              "value": "Type II",
+              "aliases": [
+                "type 2",
+                "TypeII",
+                "Type-II",
+                "Type 2"
+              ]
+            },
+            "largest_change_points": {
+              "type": "number",
+              "value": -14.0,
+              "tolerance": 0.05,
+              "integer": false
+            },
+            "comparison_share_dev_test": {
+              "type": "number",
+              "value": 27.0,
+              "tolerance": 0.05,
+              "integer": false
+            },
+            "comparison_share_training": {
+              "type": "number",
+              "value": 20.0,
+              "tolerance": 0.05,
+              "integer": false
+            },
+            "algorithm_comparison_share": {
+              "type": "number",
+              "value": 25.0,
+              "tolerance": 0.05,
+              "integer": false
+            },
+            "algorithm_yes_no_share": {
+              "type": "number",
+              "value": 12.5,
+              "tolerance": 0.05,
+              "integer": false
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 4,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-018 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 2,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "comparison",
+      "calculation",
+      "cross_table"
+    ],
+    "evidence": [
+      {
+        "source": "documents/HOTPOTQA ADataset for Diverse.pdf",
+        "section": "Table 3 and Section 4",
+        "sha256": "1ff47fefeb264db40b96dd9044835bf3c400d318d3272eb86cf6cc3d35697023"
+      },
+      {
+        "source": "documents/HOTPOTQA ADataset for Diverse.pdf",
+        "section": "Algorithm 1",
+        "sha256": "1ff47fefeb264db40b96dd9044835bf3c400d318d3272eb86cf6cc3d35697023"
+      }
+    ],
+    "evidence_family": "H_design",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "HotpotQA dev/test reasoning-type shares",
+        "depends_on": []
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "HotpotQA training-sample reasoning-type shares",
+        "depends_on": [
+          0
+        ]
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "HotpotQA Algorithm 1 ratios",
+        "depends_on": [
+          0,
+          1
+        ]
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-018"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-018"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-019",
+    "question": "The Transformer paper explains how it estimates training cost and gives a sustained-throughput figure for the GPU it trained on. Using that method and figure with the reported training times and number of GPUs, estimate the training FLOPs of the big model and of the base model, and give the ratio of the cost in the main results table to your estimate for each (four decimals). Does the method reproduce both table values to within 1%?\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{gpu_tflops_used: number | null, big: {estimated_flops: number | null, table_to_estimate_ratio: number | null}, base: {estimated_flops: number | null, table_to_estimate_ratio: number | null}, reproduces_within_1pct: boolean | null}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"gpu_tflops_used\":9.5,\"big\":{\"estimated_flops\":2.29824e+19,\"table_to_estimate_ratio\":1.0008},\"base\":{\"estimated_flops\":3.2832e+18,\"table_to_estimate_ratio\":1.0051},\"reproduces_within_1pct\":true}",
+    "reference_context": "[T_train+T_tables] FLOPs = time x GPUs x sustained TFLOPS; P100 = 9.5 TFLOPS. Big: 3.5 days x 8 GPUs -> 2.29824e+19; table 2.3e19, ratio 1.0008. Base: 12 hours x 8 -> 3.2832e+18; table 3.3e18, ratio 1.0051. Using steps x step time instead would be the wrong method.",
+    "reference_explanation": "FLOPs = time x GPUs x sustained TFLOPS; P100 = 9.5 TFLOPS. Big: 3.5 days x 8 GPUs -> 2.29824e+19; table 2.3e19, ratio 1.0008. Base: 12 hours x 8 -> 3.2832e+18; table 3.3e18, ratio 1.0051. Using steps x step time instead would be the wrong method.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "gpu_tflops_used": {
+              "type": "number",
+              "value": 9.5,
+              "tolerance": 0.005,
+              "integer": false
+            },
+            "big": {
+              "type": "object",
+              "fields": {
+                "estimated_flops": {
+                  "type": "number",
+                  "value": 2.29824e+19,
+                  "tolerance": 1e+16,
+                  "integer": false
+                },
+                "table_to_estimate_ratio": {
+                  "type": "number",
+                  "value": 1.0008,
+                  "tolerance": 0.0005,
+                  "integer": false
+                }
+              }
+            },
+            "base": {
+              "type": "object",
+              "fields": {
+                "estimated_flops": {
+                  "type": "number",
+                  "value": 3.2832e+18,
+                  "tolerance": 1000000000000000.0,
+                  "integer": false
+                },
+                "table_to_estimate_ratio": {
+                  "type": "number",
+                  "value": 1.0051,
+                  "tolerance": 0.0005,
+                  "integer": false
+                }
+              }
+            },
+            "reproduces_within_1pct": {
+              "type": "boolean",
+              "value": true
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 4,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-019 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 2,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "dependent_retrieval",
+      "calculation",
+      "conditional_decision"
+    ],
+    "evidence": [
+      {
+        "source": "documents/Attention Is All You Need.pdf",
+        "section": "Section 6.1 and footnote 5",
+        "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+      },
+      {
+        "source": "documents/Attention Is All You Need.pdf",
+        "section": "Section 5.2",
+        "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+      },
+      {
+        "source": "documents/Attention Is All You Need.pdf",
+        "section": "Table 2",
+        "sha256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697"
+      }
+    ],
+    "evidence_family": "T_train+T_tables",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "Transformer cost-estimation method and P100 TFLOPS",
+        "depends_on": []
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "Transformer training times and GPU count",
+        "depends_on": [
+          0
+        ]
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "Table 2 training costs",
+        "depends_on": [
+          0,
+          1
+        ]
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-019"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-019"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-020",
+    "question": "Across all three backbone LLMs and four datasets in DRAGIN's main results (exact match; accuracy for StrategyQA), in how many of the 12 backbone-dataset cells does DRAGIN have the highest score among all methods? List the cells where it does not, with the method that is highest there. Separately, using the paper's retrieval-count comparison, does DRAGIN use fewer retrievals per question than FS-RAG in every backbone-dataset cell? List any exception cells.\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{cells_where_dragin_is_best: number | null, cells_where_another_method_is_best: set of {backbone: string | null, dataset: string | null, best_method: string | null}, fewer_retrievals_than_fs_rag_everywhere: boolean | null, fs_rag_exception_cells: set of {backbone: string | null, dataset: string | null}}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"cells_where_dragin_is_best\":10,\"cells_where_another_method_is_best\":[{\"backbone\":\"Llama2-13b-chat\",\"dataset\":\"IIRC\",\"best_method\":\"SR-RAG\"},{\"backbone\":\"Llama2-7b-chat\",\"dataset\":\"StrategyQA\",\"best_method\":\"wo-RAG\"}],\"fewer_retrievals_than_fs_rag_everywhere\":false,\"fs_rag_exception_cells\":[{\"backbone\":\"Llama2-7b-chat\",\"dataset\":\"StrategyQA\"}]}",
+    "reference_context": "[D_results] Table 2: DRAGIN is highest except Llama2-13b IIRC (SR-RAG 0.196 > 0.185) and Llama2-7b StrategyQA (wo-RAG 0.659 > 0.641). Table 3: DRAGIN fewer than FS-RAG except Llama2-7b StrategyQA (4.629 > 4.546). The ablation tables later in the paper report different numbers for some cells and are not the main results.",
+    "reference_explanation": "Table 2: DRAGIN is highest except Llama2-13b IIRC (SR-RAG 0.196 > 0.185) and Llama2-7b StrategyQA (wo-RAG 0.659 > 0.641). Table 3: DRAGIN fewer than FS-RAG except Llama2-7b StrategyQA (4.629 > 4.546). The ablation tables later in the paper report different numbers for some cells and are not the main results.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "cells_where_dragin_is_best": {
+              "type": "number",
+              "value": 10,
+              "tolerance": 0,
+              "integer": true
+            },
+            "cells_where_another_method_is_best": {
+              "type": "array",
+              "elements": [
+                {
+                  "type": "object",
+                  "fields": {
+                    "backbone": {
+                      "type": "string",
+                      "value": "Llama2-13b-chat",
+                      "aliases": [
+                        "LLaMA2-13B-Chat",
+                        "L13B",
+                        "Llama-2-13b-chat",
+                        "Llama-2-13B-Chat",
+                        "LLaMA-2-13B-Chat",
+                        "Llama2-13B-Chat",
+                        "Llama 2 13B Chat",
+                        "Llama2 13b chat"
+                      ]
+                    },
+                    "dataset": {
+                      "type": "string",
+                      "value": "IIRC",
+                      "aliases": []
+                    },
+                    "best_method": {
+                      "type": "string",
+                      "value": "SR-RAG",
+                      "aliases": [
+                        "SRRAG",
+                        "SR RAG",
+                        "single-round RAG"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "fields": {
+                    "backbone": {
+                      "type": "string",
+                      "value": "Llama2-7b-chat",
+                      "aliases": [
+                        "LLaMA2-7B-Chat",
+                        "L7B",
+                        "Llama-2-7b-chat",
+                        "Llama-2-7B-Chat",
+                        "LLaMA-2-7B-Chat",
+                        "Llama2-7B-Chat",
+                        "Llama 2 7B Chat",
+                        "Llama2 7b chat"
+                      ]
+                    },
+                    "dataset": {
+                      "type": "string",
+                      "value": "StrategyQA",
+                      "aliases": [
+                        "Strategy QA"
+                      ]
+                    },
+                    "best_method": {
+                      "type": "string",
+                      "value": "wo-RAG",
+                      "aliases": [
+                        "w/o RAG",
+                        "wo RAG",
+                        "woRAG",
+                        "without RAG",
+                        "no RAG",
+                        "no retrieval"
+                      ]
+                    }
+                  }
+                }
+              ],
+              "unordered": true
+            },
+            "fewer_retrievals_than_fs_rag_everywhere": {
+              "type": "boolean",
+              "value": false
+            },
+            "fs_rag_exception_cells": {
+              "type": "array",
+              "elements": [
+                {
+                  "type": "object",
+                  "fields": {
+                    "backbone": {
+                      "type": "string",
+                      "value": "Llama2-7b-chat",
+                      "aliases": [
+                        "LLaMA2-7B-Chat",
+                        "L7B",
+                        "Llama-2-7b-chat",
+                        "Llama-2-7B-Chat",
+                        "LLaMA-2-7B-Chat",
+                        "Llama2-7B-Chat",
+                        "Llama 2 7B Chat",
+                        "Llama2 7b chat"
+                      ]
+                    },
+                    "dataset": {
+                      "type": "string",
+                      "value": "StrategyQA",
+                      "aliases": [
+                        "Strategy QA"
+                      ]
+                    }
+                  }
+                }
+              ],
+              "unordered": true
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 3,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-020 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 1,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "comparison",
+      "filtering",
+      "cross_table",
+      "constrained_analysis"
+    ],
+    "evidence": [
+      {
+        "source": "documents/Dynamic RAG by TsinguaU.pdf",
+        "section": "Table 2",
+        "sha256": "02807e9427f7e24093b1ce3e9f3be63b671cc4e218ff04e682c86b6475e63bf3"
+      },
+      {
+        "source": "documents/Dynamic RAG by TsinguaU.pdf",
+        "section": "Table 3",
+        "sha256": "02807e9427f7e24093b1ce3e9f3be63b671cc4e218ff04e682c86b6475e63bf3"
+      }
+    ],
+    "evidence_family": "D_results",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "DRAGIN Table 2 all backbones and datasets",
+        "depends_on": []
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "DRAGIN Table 3 retrieval counts all backbones",
+        "depends_on": [
+          0
+        ]
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-020"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-020"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-022",
+    "question": "HotpotQA defines joint precision and recall as products of the answer and supporting-fact values. For the baseline's distractor and full wiki test results, compute the product of answer F1 and supporting-fact F1 (as a percentage, two decimals) and compare it with the reported joint F1. Is the reported joint F1 higher than that product in each setting? Which part of the paper's metric definition makes this possible?\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{distractor: {product_of_f1: number | null, reported_joint_f1: number | null, joint_higher: boolean | null}, full_wiki: {product_of_f1: number | null, reported_joint_f1: number | null, joint_higher: boolean | null}, explanation: enum(\"metrics_averaged_per_example\", \"reporting_error\", \"different_test_sets\", \"joint_f1_uses_em\") | null}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"distractor\":{\"product_of_f1\":39.3,\"reported_joint_f1\":41.37,\"joint_higher\":true},\"full_wiki\":{\"product_of_f1\":14.0,\"reported_joint_f1\":17.85,\"joint_higher\":true},\"explanation\":\"metrics_averaged_per_example\"}",
+    "reference_context": "[H_eval] Distractor: 58.99 x 66.62 = 39.30 < joint F1 41.37. Full wiki: 34.40 x 40.69 = 14.00 < 17.85. The paper computes joint P/R per example and averages over examples; the product of averages is not the average of per-example products.",
+    "reference_explanation": "Distractor: 58.99 x 66.62 = 39.30 < joint F1 41.37. Full wiki: 34.40 x 40.69 = 14.00 < 17.85. The paper computes joint P/R per example and averages over examples; the product of averages is not the average of per-example products.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "distractor": {
+              "type": "object",
+              "fields": {
+                "product_of_f1": {
+                  "type": "number",
+                  "value": 39.3,
+                  "tolerance": 0.01,
+                  "integer": false
+                },
+                "reported_joint_f1": {
+                  "type": "number",
+                  "value": 41.37,
+                  "tolerance": 0.005,
+                  "integer": false
+                },
+                "joint_higher": {
+                  "type": "boolean",
+                  "value": true
+                }
+              }
+            },
+            "full_wiki": {
+              "type": "object",
+              "fields": {
+                "product_of_f1": {
+                  "type": "number",
+                  "value": 14.0,
+                  "tolerance": 0.01,
+                  "integer": false
+                },
+                "reported_joint_f1": {
+                  "type": "number",
+                  "value": 17.85,
+                  "tolerance": 0.005,
+                  "integer": false
+                },
+                "joint_higher": {
+                  "type": "boolean",
+                  "value": true
+                }
+              }
+            },
+            "explanation": {
+              "type": "string",
+              "value": "metrics_averaged_per_example",
+              "aliases": [],
+              "choices": [
+                "metrics_averaged_per_example",
+                "reporting_error",
+                "different_test_sets",
+                "joint_f1_uses_em"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 3,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-022 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 1,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "calculation",
+      "conditional_decision",
+      "comparison"
+    ],
+    "evidence": [
+      {
+        "source": "documents/HOTPOTQA ADataset for Diverse.pdf",
+        "section": "Section 5.2",
+        "sha256": "1ff47fefeb264db40b96dd9044835bf3c400d318d3272eb86cf6cc3d35697023"
+      },
+      {
+        "source": "documents/HOTPOTQA ADataset for Diverse.pdf",
+        "section": "Table 4",
+        "sha256": "1ff47fefeb264db40b96dd9044835bf3c400d318d3272eb86cf6cc3d35697023"
+      }
+    ],
+    "evidence_family": "H_eval",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "HotpotQA joint metric definition",
+        "depends_on": []
+      },
+      {
+        "tool": "retrieve",
+        "query_or_window": "HotpotQA Table 4 answer, supporting-fact and joint F1",
+        "depends_on": [
+          0
+        ]
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-022"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-022"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "fred_releases"
+      ],
+      [
+        "fred_releases",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-023",
+    "question": "Using the economic calendar for this week and next week, find every date with a Tier 1 release. On those dates, how many releases are not Tier 1? List the dates on which two or more releases share the same time slot, and give the earliest time (ET) of any release that is not Tier 1 on a date that also has a Tier 1 release.\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{tier1_dates: set of string | null, non_tier1_releases_on_tier1_dates: number | null, shared_time_slot_dates: set of string | null, earliest_non_tier1_time_on_tier1_date: string | null}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"tier1_dates\":[\"2026-04-09\",\"2026-04-10\",\"2026-04-14\"],\"non_tier1_releases_on_tier1_dates\":1,\"shared_time_slot_dates\":[\"2026-04-09\"],\"earliest_non_tier1_time_on_tier1_date\":\"10:00\"}",
+    "reference_context": "[F_this+F_next] This week: Tier 1 on 04-09 (GDP and Personal Income, both 8:30) and 04-10 (CPI); next week: 04-14 (PPI). Only non-Tier-1 release on those dates: Manufacturer's Shipments 04-09 at 10:00. Shared slot: 04-09 8:30.",
+    "reference_explanation": "This week: Tier 1 on 04-09 (GDP and Personal Income, both 8:30) and 04-10 (CPI); next week: 04-14 (PPI). Only non-Tier-1 release on those dates: Manufacturer's Shipments 04-09 at 10:00. Shared slot: 04-09 8:30.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "tier1_dates": {
+              "type": "array",
+              "elements": [
+                {
+                  "type": "string",
+                  "value": "2026-04-09",
+                  "aliases": []
+                },
+                {
+                  "type": "string",
+                  "value": "2026-04-10",
+                  "aliases": []
+                },
+                {
+                  "type": "string",
+                  "value": "2026-04-14",
+                  "aliases": []
+                }
+              ],
+              "unordered": true
+            },
+            "non_tier1_releases_on_tier1_dates": {
+              "type": "number",
+              "value": 1,
+              "tolerance": 0,
+              "integer": true
+            },
+            "shared_time_slot_dates": {
+              "type": "array",
+              "elements": [
+                {
+                  "type": "string",
+                  "value": "2026-04-09",
+                  "aliases": []
+                }
+              ],
+              "unordered": true
+            },
+            "earliest_non_tier1_time_on_tier1_date": {
+              "type": "string",
+              "value": "10:00",
+              "aliases": [
+                "10:00 ET",
+                "10:00 AM"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 3,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-023 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 1,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "filtering",
+      "conditional_decision",
+      "calculation"
+    ],
+    "evidence": [
+      {
+        "source": "dataset/fixtures/fred_releases",
+        "section": "this_week and next_week"
+      }
+    ],
+    "evidence_family": "F_this+F_next",
+    "solution_steps": [
+      {
+        "tool": "fred_releases",
+        "query_or_window": "fred_releases this_week",
+        "depends_on": []
+      },
+      {
+        "tool": "fred_releases",
+        "query_or_window": "fred_releases next_week",
+        "depends_on": [
+          0
+        ]
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-023"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-023"
+  },
+  {
+    "acceptable_tool_sets": [
+      [
+        "retrieve"
+      ],
+      [
+        "web_search"
+      ],
+      [
+        "retrieve",
+        "web_search"
+      ]
+    ],
+    "expected_args": {},
+    "required_no_tool": false,
+    "replay_fixture_id": "",
+    "grading_rubric": [
+      "Every required field must match the typed contract, with its own units and numeric tolerance.",
+      "Object keys fix the entity/metric/date relationships; sets require exact membership and ordered arrays require the correct order.",
+      "Missing evidence must be distinguished from false, zero and an empty set; use null only where warranted.",
+      "Closed categorical fields grade the requested conclusion; free-form explanations and tool-result faithfulness are outside this deterministic check.",
+      "Output format and execution termination are reported separately from substantive correctness; missing or contradicted conclusions remain content errors."
+    ],
+    "answer_format": "json_contract",
+    "grading_version": "phase1-v2-p0-1",
+    "evaluation": {
+      "version": "phase1-v2-p0-1",
+      "correctness_source": "deterministic",
+      "format": "json_contract",
+      "success_policy": "completed_and_semantically_correct",
+      "format_policy": "report_separately",
+      "accounting_policy": "proxy-v1"
+    },
+    "as_of_date": "2026-04-06",
+    "task_id": "phase1-v3-hard-024",
+    "question": "For ACE's financial benchmarks, in the online setting without ground-truth labels: does ACE beat the base model on FiNER and on Formula, and by how many points does it beat or trail the DC baseline in the same setting on each? Which ACE configuration (offline or online, with or without labels) gives the largest Formula gain over the base model, and how large is that gain?\n\nReport the requested conclusions using only the fields below. Return one compact JSON object with exactly these keys. Use JSON numbers (not quoted numbers), booleans, and null for values that the evidence cannot determine. A nullable type is an available answer option, not a hint that the value is missing. Sets may use any order; other arrays preserve order. Keep rounding specified above; otherwise give computed non-integers to at least four decimal places. Dates use YYYY-MM-DD and times use 24-hour HH:MM in ET. Name methods, models, datasets and systems as the source paper does.\n\nField/type contract (types and allowed codes, not answers):\n{online_unlabeled: {beats_base_finer: boolean | null, beats_base_formula: boolean | null, ace_minus_dc_finer: number | null, ace_minus_dc_formula: number | null}, best_formula: {setting: enum(\"offline\", \"online\") | null, uses_labels: boolean | null, gain_points: number | null}}",
+    "task_type": "analysis",
+    "difficulty": "hard",
+    "reference_answer": "{\"online_unlabeled\":{\"beats_base_finer\":false,\"beats_base_formula\":true,\"ace_minus_dc_finer\":-1.0,\"ace_minus_dc_formula\":16.0},\"best_formula\":{\"setting\":\"offline\",\"uses_labels\":true,\"gain_points\":18.0}}",
+    "reference_context": "[A_results] Base 70.7 / 67.5. Online, no labels: ACE 67.3 / 78.5 (FiNER -3.4, Formula +11.0); DC 68.3 / 62.5, so ACE - DC = -1.0 / +16.0. Formula: offline labeled 85.5 (+18.0), offline unlabeled 83.0, online labeled 76.5, online unlabeled 78.5.",
+    "reference_explanation": "Base 70.7 / 67.5. Online, no labels: ACE 67.3 / 78.5 (FiNER -3.4, Formula +11.0); DC 68.3 / 62.5, so ACE - DC = -1.0 / +16.0. Formula: offline labeled 85.5 (+18.0), offline unlabeled 83.0, online labeled 76.5, online unlabeled 78.5.",
+    "answer_check": {
+      "mode": "structured",
+      "params": {
+        "contract_version": 1,
+        "contract": {
+          "type": "object",
+          "fields": {
+            "online_unlabeled": {
+              "type": "object",
+              "fields": {
+                "beats_base_finer": {
+                  "type": "boolean",
+                  "value": false
+                },
+                "beats_base_formula": {
+                  "type": "boolean",
+                  "value": true
+                },
+                "ace_minus_dc_finer": {
+                  "type": "number",
+                  "value": -1.0,
+                  "tolerance": 0.05,
+                  "integer": false
+                },
+                "ace_minus_dc_formula": {
+                  "type": "number",
+                  "value": 16.0,
+                  "tolerance": 0.05,
+                  "integer": false
+                }
+              }
+            },
+            "best_formula": {
+              "type": "object",
+              "fields": {
+                "setting": {
+                  "type": "string",
+                  "value": "offline",
+                  "aliases": [],
+                  "choices": [
+                    "offline",
+                    "online"
+                  ]
+                },
+                "uses_labels": {
+                  "type": "boolean",
+                  "value": true
+                },
+                "gain_points": {
+                  "type": "number",
+                  "value": 18.0,
+                  "tolerance": 0.05,
+                  "integer": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "ideal_llm_calls": 2,
+    "source": "authored_phase1_v3",
+    "notes": "Harder replacement for phase1-v2-hard-024 (solved in >2/3 of Qwen sweep cells). Gold values checked against the PDF text.",
+    "key_facts_proposed": false,
+    "needs_review": false,
+    "review": {
+      "by": "Claude",
+      "date": "2026-10-20",
+      "human_verified": false,
+      "grounding": "Gold values read from the PDF text tables/sections and computed in scripts/build_phase1_v3.py; not yet human-verified or piloted."
+    },
+    "dataset_version": "phase1_v3",
+    "difficulty_score": 5,
+    "difficulty_profile": {
+      "dependencies": 0,
+      "tools": 1,
+      "branches": 2,
+      "distractors": 1,
+      "calculation": 1,
+      "recovery": 0
+    },
+    "capabilities": [
+      "comparison",
+      "filtering",
+      "calculation",
+      "conditional_decision"
+    ],
+    "evidence": [
+      {
+        "source": "documents/Agentic Context Engineering.pdf",
+        "section": "Table 2",
+        "sha256": "880e354fc747d44432409ef9dc1378a9a8aab2e4a326adb8e30f6bb44ff2808d"
+      }
+    ],
+    "evidence_family": "A_results",
+    "solution_steps": [
+      {
+        "tool": "retrieve",
+        "query_or_window": "ACE Table 2 finance results, all configurations",
+        "depends_on": []
+      }
+    ],
+    "derived_from": [
+      "phase1-v2-hard-024"
+    ],
+    "answerability": "answerable",
+    "replaces": "phase1-v2-hard-024"
+  }
+]

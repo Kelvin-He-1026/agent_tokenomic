@@ -342,6 +342,67 @@ def _separate_numeric(answer: str, params: dict[str, Any]) -> Score:
     return Score(ok, "numeric_tolerance", f"found {found:g}; format checked separately", format_ok, ok)
 
 
+# -- GAIA: the benchmark's official quasi-exact-match scorer ---------------------
+# Follows GAIA's published question_scorer: numbers compare as floats after
+# dropping $, % and thousands separators; comma/semicolon lists compare element
+# by element (same length, same order); strings compare after lowercasing and
+# removing whitespace and punctuation. The answer is the text after the last
+# "FINAL ANSWER:" marker, which the task asks for.
+FINAL_ANSWER_RE = re.compile(r"final\s+answer\s*[:：]\s*(.+)", re.I)
+
+
+def _gaia_number(text: str) -> float | None:
+    cleaned = text.replace("$", "").replace("%", "").replace(",", "").strip()
+    try:
+        return float(cleaned)
+    except ValueError:
+        return None
+
+
+def _gaia_str(text: str, remove_punct: bool = True) -> str:
+    text = re.sub(r"\s", "", text).lower()
+    if remove_punct:
+        text = re.sub(r"[^\w]", "", text)
+    return text
+
+
+def _gaia_split(text: str) -> list[str]:
+    return [p.strip() for p in re.split(r"[,;]", text)]
+
+
+def gaia_match(model_answer: str, ground_truth: str) -> bool:
+    model_answer = model_answer.strip().strip("*").strip()
+    if _gaia_number(ground_truth) is not None:
+        value = _gaia_number(model_answer)
+        return value is not None and value == _gaia_number(ground_truth)
+    if any(c in ground_truth for c in ",;"):
+        gt, ma = _gaia_split(ground_truth), _gaia_split(model_answer)
+        if len(gt) != len(ma):
+            return False
+        for g, m in zip(gt, ma):
+            if _gaia_number(g) is not None:
+                if _gaia_number(m) is None or _gaia_number(m) != _gaia_number(g):
+                    return False
+            elif _gaia_str(m, remove_punct=False) != _gaia_str(g, remove_punct=False):
+                return False
+        return True
+    return _gaia_str(model_answer) == _gaia_str(ground_truth)
+
+
+def _gaia_score(answer: str, params: dict[str, Any]) -> Score:
+    gold = str(params.get("answer", ""))
+    found = FINAL_ANSWER_RE.findall(answer)
+    if found:
+        extracted, format_ok = found[-1].strip().splitlines()[0].strip(), True
+    else:
+        # No marker: grade the last non-empty line, and report the format miss.
+        lines = [line.strip() for line in answer.strip().splitlines() if line.strip()]
+        extracted, format_ok = (lines[-1] if lines else ""), False
+    ok = bool(extracted) and gaia_match(extracted, gold)
+    detail = f"extracted {extracted[:80]!r} vs gold {gold[:60]!r}" + ("" if format_ok else "; no FINAL ANSWER line")
+    return Score(ok, "gaia_exact", detail, format_ok=format_ok, semantic_correct=ok)
+
+
 def _score_content(
     answer: str,
     check: dict[str, Any],
@@ -359,6 +420,8 @@ def _score_content(
     if status != "completed":
         return Score(False, mode, f"run did not complete ({status})")
 
+    if mode == "gaia_exact":
+        return _gaia_score(answer or "", params)
     if mode == "structured":
         return _structured_score(answer or "", params)
 

@@ -45,6 +45,7 @@ db/chroma/   the frozen retrieval index
 output/runs/ telemetry per cell: config/run/llm_call/tool_call/eval + blobs/
 scripts/     start_stack.sh, stop_stack.sh, fetch_models.py, serve_vllm.sh,
              build_index.py, record_fixtures.py, parity_check.py
+GAIA_stack/  the GAIA task set: config, fetch/prepare scripts, sweep driver
 ```
 
 Each runtime gets its own folder (`langGraph/`, `openai_agents/`, `crewAI/`),
@@ -583,6 +584,13 @@ reworded fixture, and otherwise call the live API once and save the result.
 `retrieve` is never recorded: it always runs live against the frozen index, so
 its behaviour and latency match every other run. Probe results are for
 recording fixtures only; tool latency is live in them, so do not analyse them.
+
+## GAIA task set
+
+GAIA (2023 validation, 75 tasks) runs on the same harness with its own tools
+(`web_search`, `fetch_url`, `read_file`), limits and exact-match scorer.
+Everything GAIA-specific is in [GAIA_stack/](GAIA_stack/README.md), including
+how to fetch the task files, which are not committed.
 
 ## Parity, in code
 

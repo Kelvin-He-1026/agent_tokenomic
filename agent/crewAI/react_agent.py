@@ -147,7 +147,7 @@ class CrewAIReActAgent:
 
             return SharedTool()
 
-        return [build(spec) for spec in schemas.TOOL_SCHEMAS]
+        return [build(spec) for spec in schemas.tool_specs(self.cfg.tools)]
 
     # -- run ---------------------------------------------------------------
     def run(self, question: str, registry: ToolRegistry) -> AgentResult:

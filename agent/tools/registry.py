@@ -126,4 +126,4 @@ class ToolRegistry:
         return _fn
 
     def specs(self) -> list[dict[str, Any]]:
-        return schemas.TOOL_SCHEMAS
+        return schemas.tool_specs(self.cfg.tools)

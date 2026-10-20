@@ -92,7 +92,7 @@ class OpenAIAgentsReActAgent:
                 on_invoke_tool=invoker(spec["name"]),
                 strict_json_schema=False,
             )
-            for spec in schemas.TOOL_SCHEMAS
+            for spec in schemas.tool_specs(self.cfg.tools)
         ]
 
     # -- run ---------------------------------------------------------------

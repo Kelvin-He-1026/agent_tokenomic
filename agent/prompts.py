@@ -34,3 +34,31 @@ def build_system_prompt(as_of_date: str) -> str:
 def prompt_hash(prompt: str) -> str:
     """Parity evidence: all three frameworks must produce this same value."""
     return hashlib.sha256(prompt.encode()).hexdigest()[:16]
+
+
+# Appended to a task's question (not the system prompt, which every framework
+# must send unchanged) when the task asks for GAIA's answer format. Wording
+# follows the GAIA paper's reference prompt.
+GAIA_ANSWER_FORMAT = (
+    "Report your reasoning, and finish your answer with the following template: "
+    "FINAL ANSWER: [YOUR FINAL ANSWER]. YOUR FINAL ANSWER should be a number OR as few words "
+    "as possible OR a comma separated list of numbers and/or strings. If you are asked for a "
+    "number, don't use commas to write your number, nor units such as $ or percent signs, "
+    "unless specified otherwise. If you are asked for a string, don't use articles or "
+    "abbreviations (e.g. for cities), and write digits in plain text unless specified "
+    "otherwise. If you are asked for a comma separated list, apply the above rules to each "
+    "element depending on whether it is a number or a string."
+)
+
+
+def task_prompt(item: dict) -> str:
+    """The question a run sends: the task's question, plus its attachment notice
+    and answer-format instructions when the task carries them."""
+    question = item["question"]
+    if item.get("requires_attachment") and item.get("file_name"):
+        question += (f"\n\nAttached file: {item['file_name']}. "
+                     "Open it with the read_file tool.")
+    if item.get("answer_format") == "gaia_final_answer":
+        question += "\n\n" + GAIA_ANSWER_FORMAT
+    return question
+

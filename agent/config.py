@@ -183,6 +183,16 @@ class RunConfig:
     models_dir: str = "model"
     chroma_dir: str = "db/chroma"
     chroma_collection: str = "documents"
+    # Tools offered to the agent. Empty = the Phase 1 three (retrieve,
+    # web_search, fred_releases). The choice enters config_id through
+    # tool_schema_hash, so it is not hashed a second time here.
+    tools: tuple[str, ...] = ()
+    # Where read_file looks for task attachments (GAIA).
+    attachments_dir: str = "GAIA_stack/documents"
+    # Search engine behind web_search: "tavily" (API key, credits) or "ddg"
+    # (DuckDuckGo via ddgs, no key). Hashed into config_id only when not the
+    # default, so Phase 1 config_ids do not change.
+    web_search_backend: str = "tavily"
 
     # Environment provenance, filled by the harness at run time.
     framework_version: str = ""
@@ -203,6 +213,8 @@ class RunConfig:
             "prompt_hash": prompt_hash,
             "tool_schema_hash": tool_schema_hash,
         }
+        if self.web_search_backend != "tavily":
+            payload["web_search_backend"] = self.web_search_backend
         blob = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
@@ -225,6 +237,8 @@ class RunConfig:
         for key, klass in nested.items():
             if isinstance(raw.get(key), dict):
                 raw[key] = klass(**raw[key])
+        if isinstance(raw.get("tools"), list):
+            raw["tools"] = tuple(raw["tools"])
         known = {f.name for f in fields(cls)}
         unknown = set(raw) - known
         if unknown:
@@ -269,3 +283,7 @@ def _plain(obj: Any) -> Any:
 # base_url too: which stack's proxy a run went through says where it ran, not
 # what was run, so the same cell on stack a and stack b shares one config_id.
 _PROVENANCE = {"framework_version", "vllm_version", "hardware_id", "numa_pinning", "base_url"}
+# Covered by another hash (tools -> tool_schema_hash), a location rather than a
+# condition (attachments_dir), or added to config_id only when not the default
+# (web_search_backend). Left out so existing config_ids do not change.
+_PROVENANCE |= {"tools", "attachments_dir", "web_search_backend"}

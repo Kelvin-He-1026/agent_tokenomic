@@ -1,0 +1,52 @@
+# GAIA cell: Qwen3.8-27B, TP=2 (both GPUs), for GAIA_stack/tasks/phase1-GAIA*.json.
+# Tools: web_search, fetch_url (page text, recorded and replayed like web_search) and
+# read_file (task attachments in GAIA_stack/documents/); no retrieve or calendar.
+# GAIA tasks need many more steps than Phase 1: 30 LLM calls, 16384 output tokens per
+# call (thinking counts against it), 30 min per task, and a 128k context so that many
+# fetched pages fit. Recorded searches and pages go to GAIA_stack/fixtures/, apart
+# from Phase 1's. web_search uses Tavily until its credits run out, then DuckDuckGo
+# (ddgs: no key, no credits). Serve with ATK_STACK unset; nothing else alongside.
+framework: langgraph
+as_of_date: '2026-04-06'
+base_url: http://127.0.0.1:8100/v1
+api_key: EMPTY
+tool_mode: replay
+fixtures_dir: GAIA_stack/fixtures
+web_search_backend: tavily_then_ddg
+retrieval_top_k: 5
+models_dir: model
+embedding_model: BAAI/bge-large-en-v1.5
+embedding_local_dir: bge-large-en-v1.5
+chroma_dir: db/chroma
+embedding_device: cpu
+chroma_collection: documents
+model:
+  repo: Qwen/Qwen3.8-27B
+  local_dir: Qwen3.8-27B
+  revision: main
+  served_name: Qwen/Qwen3.8-27B
+  precision: bf16
+  tp_size: 2
+  max_model_len: 131072
+  gpu_memory_utilization: 0.9
+  tool_call_parser: qwen3_xml
+  reasoning_parser: qwen3
+  thinking_setting: 'off'
+  reasoning_effort: ''
+sampling:
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 16384
+  seed: 1234
+  stream: true
+limits:
+  max_llm_calls: 30
+  request_timeout_s: 300
+  task_timeout_s: 1800
+  client_retries: 0
+  parallel_tool_calls: false
+tools:
+- web_search
+- fetch_url
+- read_file
+attachments_dir: GAIA_stack/documents

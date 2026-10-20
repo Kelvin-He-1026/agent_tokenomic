@@ -43,7 +43,9 @@ class Task:
     @classmethod
     def load_all(cls, path: str | Path) -> list["Task"]:
         items = json.loads(Path(path).read_text())
-        return [cls(task_id=str(it["task_id"]), question=it["question"], raw=it) for it in items]
+        from ..prompts import task_prompt
+
+        return [cls(task_id=str(it["task_id"]), question=task_prompt(it), raw=it) for it in items]
 
 
 class Runner:
@@ -61,7 +63,7 @@ class Runner:
         self.adapter = adapter
         self.writer = TelemetryWriter(out_dir)
         self.prompt_hash = prompt_hash(build_system_prompt(cfg.as_of_date))
-        self.schema_hash = schemas.tool_schema_hash()
+        self.schema_hash = schemas.tool_schema_hash(cfg.tools)
         self.config_id = cfg.config_id(self.prompt_hash, self.schema_hash)
         self._config_written = False
         self.last_fixture_matches: dict[str, int] = {}
