@@ -24,7 +24,9 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+ROOT_DIR = Path(__file__).resolve().parent.parent
 
+from agent import prompt_breakdown, transcripts
 from agent.accounting import cap_hits
 from agent.evaluation import OUTCOME_POLICY_VERSION
 
@@ -40,6 +42,9 @@ COLUMNS = [
     "task_type", "check_mode", "success", "success_detail", "format_ok",
     "difficulty", "semantic_correct", "execution_completed", "strict_success", "format_success",
     "completion_type", "natural_completion", "outcome_policy_version",
+    # one label per run: success | wrong_answer | format_failure | tool_failure
+    # | step_limit | output_truncation | timeout | framework_error | pending_judge
+    "failure_category",
     "score_source", "score_state", "evaluation_version",
     # LLM judge (DeepEval, scripts/judge_runs.py); empty where not yet scored
     "judge_faithfulness", "judge_faithfulness_pass",
@@ -62,12 +67,18 @@ COLUMNS = [
     "input_tokens", "output_tokens", "reasoning_tokens", "answer_tokens",
     "reasoning_share_pct", "reasoning_chars", "reasoning_tokens_missing",
     "cached_input_tokens", "total_tokens", "prefix_cache_hit_rate", "tokens_per_llm_call",
+    # input_tokens by source, summed over the run's calls (agent/prompt_breakdown.py)
+    "system_prompt_tokens", "conversation_history_tokens", "tool_response_tokens",
+    "current_user_prompt_tokens", "other_prompt_tokens",
     # latency
     "e2e_ms", "t_llm_ms", "t_tool_ms", "t_orch_ms", "t_queue_ms",
     "llm_share_pct", "orch_share_pct",
     "ttft_first_ms", "ttft_mean_ms", "tpot_mean_ms", "llm_latency_max_ms",
     # resources
     "proc_cpu_ms", "peak_rss_mb", "energy_gpu_j", "energy_cpu_j",
+    # energy_gpu_j = sum of the per-GPU values, each the driver's cumulative
+    # energy counter (NVML total energy) at run end minus at run start
+    "energy_gpu0_j", "energy_gpu1_j", "energy_total_j", "energy_method",
     # fixtures
     "fixture_exact", "fixture_normalized", "fixture_nearest", "fixture_live",
     "has_approx_fixture",
@@ -190,6 +201,7 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
             "accounting_policy": r.get("accounting_policy", "legacy_unknown"),
 
             "input_tokens": r["input_tokens"],
+            **run_breakdown(run_dir, calls),
             "output_tokens": r["output_tokens"],
             "reasoning_tokens": reasoning_tokens,
             "answer_tokens": r["output_tokens"] - reasoning_tokens,
@@ -217,8 +229,7 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
 
             "proc_cpu_ms": round(r["proc_cpu_ms"], 1),
             "peak_rss_mb": round(r["peak_rss_mb"], 1),
-            "energy_gpu_j": r.get("energy_gpu_j") or "",
-            "energy_cpu_j": r.get("energy_cpu_j") or "",
+            **run_energy(r),
 
             "fixture_exact": matches.count("exact"),
             "fixture_normalized": matches.count("normalized"),
@@ -243,6 +254,7 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
             "harness_version": r.get("harness_version", ""),
             "schema_version": r.get("schema_version", ""),
         })
+        rows[-1]["failure_category"] = failure_category(rows[-1], r["n_failed_tool_calls"])
     return rows
 
 
@@ -364,6 +376,147 @@ def cell_key(r: dict) -> str:
             f"{r.get('accounting_policy', '?')}/{r.get('budget_enforced', False)} cfg={r.get('config_id', '?')}")
 
 
+# Power traces from scripts/power_sampler.py, and every exported run's window.
+# Set in main(); used by run_energy().
+ENERGY_TRACE = None
+RUN_WINDOWS: list[tuple[float, float]] = []
+
+
+def run_energy(r: dict[str, Any]) -> dict[str, Any]:
+    """GPU and CPU energy (J) for one run, from a power trace covering it.
+
+    Blank when no trace covers the run, or when another exported run overlapped
+    it (parallel recording): energy over a shared window cannot be split per
+    run. CPU energy needs readable RAPL counters during the run.
+    """
+    out = {"energy_gpu_j": r.get("energy_gpu_j") or "", "energy_cpu_j": r.get("energy_cpu_j") or "",
+           "energy_gpu0_j": "", "energy_gpu1_j": "", "energy_total_j": "", "energy_method": ""}
+    a, b = r.get("start_ts"), r.get("end_ts")
+    if ENERGY_TRACE is None or not a or not b or not ENERGY_TRACE.covers(a, b):
+        return out
+    if sum(1 for x, y in RUN_WINDOWS if x < b and y > a) > 1:
+        out["energy_method"] = "overlapping runs: not attributable"
+        return out
+    each = ENERGY_TRACE.gpu_energy_each(a, b)
+    out["energy_gpu_j"] = round(sum(each), 2)
+    for i, e in enumerate(each[:2]):
+        out[f"energy_gpu{i}_j"] = round(e, 2)
+    cpu = ENERGY_TRACE.cpu_energy(a, b)
+    out["energy_cpu_j"] = "" if cpu is None else round(cpu, 2)
+    out["energy_total_j"] = "" if cpu is None else round(sum(each) + cpu, 2)
+    out["energy_method"] = ("gpu: NVML energy counter, all GPUs; "
+                            + ("cpu: RAPL package counters, both sockets" if cpu is not None
+                               else "cpu: not measured (RAPL unreadable)"))
+    return out
+
+
+def failure_category(row: dict[str, Any], tools_failed: int) -> str:
+    """One label per run, in a fixed order of precedence: how the run ended
+    first, then whether the answer was right, then why not."""
+    status, ctype = row.get("status"), row.get("completion_type")
+    if status == "step_limit" or ctype == "step_limit":
+        return "step_limit"
+    if status == "truncated" or ctype == "truncated":
+        return "output_truncation"
+    if status == "timeout" or ctype == "timeout":
+        return "timeout"
+    if status not in ("completed", None, ""):
+        return "framework_error"
+    if row.get("score_state") in ("pending_judge", "ambiguous_judge"):
+        return "pending_judge"
+    if row.get("success") is True:
+        return "success"
+    if row.get("score_state") == "unscorable_format" or (
+            row.get("semantic_correct") in ("", None) and row.get("format_ok") is False):
+        return "format_failure"
+    if tools_failed:
+        return "tool_failure"
+    return "wrong_answer"
+
+
+def load_energy(dirs: list[Path]) -> None:
+    """Find power traces for these runs: each run folder's power.jsonl (written
+    by the harness), plus any in output/power/ (a sampler started by hand)."""
+    global ENERGY_TRACE, RUN_WINDOWS
+    RUN_WINDOWS = [(r["start_ts"], r["end_ts"]) for d in dirs for r in read_jsonl(d / "run.jsonl")
+                   if r.get("start_ts") and r.get("end_ts")]
+    files = [d / "power.jsonl" for d in dirs if (d / "power.jsonl").exists()]
+    files += [Path(p) for p in sorted(glob.glob(str(ROOT_DIR / "output" / "power" / "*.jsonl")))]
+    if not files or not RUN_WINDOWS:
+        return
+    lo, hi = min(a for a, _ in RUN_WINDOWS), max(b for _, b in RUN_WINDOWS)
+    from attribute_energy import Trace  # scripts/ is on sys.path when run as a script
+
+    def overlaps(f: Path) -> bool:
+        with f.open() as fh:
+            first = [json.loads(l) for _, l in zip(range(2), fh)]
+        start = next((x["t"] for x in first if "t" in x), None)
+        return start is not None and start <= hi and f.stat().st_mtime * 1000 >= lo
+
+    files = [f for f in files if overlaps(f)]
+    if files:
+        ENERGY_TRACE = Trace(files)
+
+
+# Excel stops at 32,767 characters per cell; the JSONL keeps the full text.
+CSV_TEXT_LIMIT = 32000
+
+
+def export_texts(dirs: list[Path], rows: list[dict[str, Any]], out_csv: Path, out_jsonl: Path) -> int:
+    """Per run: the prompt sent, the reasoning, the answer, and the four token
+    sources, as a CSV for reading and a JSONL with the full call-by-call trace."""
+    by_id = {r["run_id"]: r for r in rows}
+    keep = ["run_id", "run_dir", "task_id", "framework", "model_repo", "thinking_setting",
+            "reasoning_effort", "status", "success", "check_mode", *prompt_breakdown.COLUMNS]
+    text_cols = ["question", "system_prompt", "user_prompt", "reasoning", "final_answer"]
+    n = 0
+    with open(out_csv, "w", newline="", encoding="utf-8") as fh, open(out_jsonl, "w", encoding="utf-8") as jh:
+        w = csv.DictWriter(fh, fieldnames=keep + ["reasoning_chars", "truncated_in_csv"] + text_cols)
+        w.writeheader()
+        for d in dirs:
+            calls_by_run: dict[str, list[dict]] = {}
+            for c in read_jsonl(d / "llm_call.jsonl"):
+                calls_by_run.setdefault(c["run_id"], []).append(c)
+            for run in read_jsonl(d / "run.jsonl"):
+                base = by_id.get(run["run_id"], {})
+                t = transcripts.run_transcript(d, run, calls_by_run.get(run["run_id"], []))
+                question = (TASKS.get(run["task_id"]) or {}).get("question", "")
+                record = {k: base.get(k, "") for k in keep}
+                record.update({"question": question, **{k: t[k] for k in text_cols if k in t}})
+                jh.write(json.dumps({**record, "calls": t["calls"]}, ensure_ascii=False) + "\n")
+                row = dict(record)
+                cut = [k for k in text_cols if len(row[k] or "") > CSV_TEXT_LIMIT]
+                for k in cut:
+                    row[k] = row[k][:CSV_TEXT_LIMIT] + " [...truncated; full text in the JSONL]"
+                row["reasoning_chars"] = len(t["reasoning"])
+                row["truncated_in_csv"] = "|".join(cut)
+                w.writerow(row)
+                n += 1
+    return n
+
+
+_BREAKDOWN: dict[tuple[str, str, int], dict[str, Any]] = {}
+
+
+def call_breakdown(run_dir: Path, call: dict[str, Any]) -> dict[str, Any]:
+    """Prompt tokens by source for one call, counted once per export."""
+    key = (str(run_dir), call["run_id"], call["call_idx"])
+    if key not in _BREAKDOWN:
+        model = next((c.get("model_repo", "") for c in read_jsonl(run_dir / "config.jsonl")), "")
+        _BREAKDOWN[key] = prompt_breakdown.for_call(call, run_dir, prompt_breakdown.counter_for(model))
+    return _BREAKDOWN[key]
+
+
+def run_breakdown(run_dir: Path, calls: list[dict[str, Any]]) -> dict[str, Any]:
+    """The per-call breakdown summed over a run; blank if any call is uncounted."""
+    parts = [call_breakdown(run_dir, c) for c in calls]
+    out: dict[str, Any] = {}
+    for col in prompt_breakdown.COLUMNS:
+        vals = [p[col] for p in parts]
+        out[col] = sum(vals) if vals and all(v != "" for v in vals) else ""
+    return out
+
+
 def export_calls(dirs: list[Path], out: Path) -> int:
     """Long-form per-LLM-call CSV, for looking at trajectories step by step."""
     cols = ["run_dir", "run_dir_path", "run_id", "call_idx", "request_ts", "ttft_ms", "latency_ms",
@@ -372,10 +525,13 @@ def export_calls(dirs: list[Path], out: Path) -> int:
             "tpot_ms", "finish_reason", "n_tool_calls_requested", "tool_names",
             "n_messages", "prompt_chars", "contains_reasoning_in_history"]
     cols += ["requested_output_cap", "effective_output_cap", "http_status", "usage_missing", "forced_final_answer", "error"]
+    # Where each call's prompt tokens come from (agent/prompt_breakdown.py).
+    cols += list(prompt_breakdown.COLUMNS)
     rows = []
     for d in dirs:
         for c in read_jsonl(d / "llm_call.jsonl"):
             row = {k: c.get(k, "") for k in cols}
+            row.update(call_breakdown(d, c))
             row["run_dir"] = d.name
             row["run_dir_path"] = str(d.resolve())
             row["tool_names"] = "|".join(c.get("tool_names") or [])
@@ -478,6 +634,9 @@ def main() -> int:
                     help="CSV path; a _YYYYmmdd_HHMMSS suffix is added unless --no-timestamp")
     ap.add_argument("--no-timestamp", action="store_true")
     ap.add_argument("--calls", action="store_true", help="also write a per-LLM-call CSV")
+    ap.add_argument("--no-texts", action="store_true",
+                    help="skip <out>_texts.csv / <out>_transcripts.jsonl (prompt, reasoning and "
+                         "answer of every run)")
     ap.add_argument("--tasks", default="dataset/tasks/phase1.json",
                     help="task annotations to score answers against")
     ap.add_argument("--judge-id", default="", help="select primary judge when multiple judges are stored")
@@ -499,6 +658,7 @@ def main() -> int:
         raise SystemExit(str(exc)) from exc
 
     rows: list[dict[str, Any]] = []
+    load_energy(dirs)
     for d in dirs:
         found = flatten_dir(d)
         rows += found
@@ -524,6 +684,12 @@ def main() -> int:
         calls_out = out.with_name(out.stem + "_llm_calls.csv")
         n = export_calls(dirs, calls_out)
         print(f"wrote {calls_out}  ({n} rows)")
+
+    if not args.no_texts:
+        texts_out = out.with_name(out.stem + "_texts.csv")
+        trace_out = out.with_name(out.stem + "_transcripts.jsonl")
+        n = export_texts(dirs, rows, texts_out, trace_out)
+        print(f"wrote {texts_out} and {trace_out.name}  ({n} runs: prompt, reasoning, answer)")
 
     summarize(rows)
     return 0

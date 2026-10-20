@@ -106,7 +106,8 @@ def main() -> int:
     ap.add_argument("--metrics", default="semantic_correctness,faithfulness")
     ap.add_argument("--select", default="judge_only",
                     help="judge_only | all | comma-separated task types")
-    ap.add_argument("--model", default="claude-opus-5")
+    ap.add_argument("--model", default="claude-opus-5-5",
+                    help="pinned in dataset/policies/phase1_v2.json (judge.model); change both together")
     ap.add_argument("--effort", default="high")
     ap.add_argument("--workers", type=int, default=3,
                     help="parallel judge calls; keep modest under subscription usage limits")

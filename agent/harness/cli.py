@@ -239,6 +239,31 @@ def select_tasks(tasks: list[Task], limit: int) -> list[Task]:
     return sorted(picked, key=lambda t: order[id(t)])
 
 
+def parse_mix(text: str) -> dict[str, int]:
+    """'easy=10,medium=15,hard=10' -> {'easy': 10, 'medium': 15, 'hard': 10}."""
+    out: dict[str, int] = {}
+    for part in filter(None, (p.strip() for p in text.split(","))):
+        level, _, n = part.partition("=")
+        if not n.strip().isdigit():
+            raise SystemExit(f"--difficulty-mix: expected level=N, got '{part}'")
+        out[level.strip()] = int(n)
+    return out
+
+
+def select_difficulty_mix(tasks: list[Task], mix: dict[str, int]) -> list[Task]:
+    """A fixed number of tasks per difficulty level, e.g. 10 easy / 15 medium /
+    10 hard, chosen like select_per_difficulty (round-robin over task types)."""
+    by_level: dict[str, list[Task]] = {}
+    for t in tasks:
+        by_level.setdefault(t.raw.get("difficulty", "unknown"), []).append(t)
+    unknown = set(mix) - set(by_level)
+    if unknown:
+        raise SystemExit(f"--difficulty-mix: no tasks at level(s) {sorted(unknown)}; have {sorted(by_level)}")
+    picked = [t for level, n in mix.items() for t in select_tasks(by_level[level], n)]
+    order = {id(t): i for i, t in enumerate(tasks)}
+    return sorted(picked, key=lambda t: order[id(t)])
+
+
 def select_per_difficulty(tasks: list[Task], per_level: int) -> list[Task]:
     """`per_level` tasks from each difficulty level, for a trial run.
 
@@ -292,9 +317,15 @@ def main() -> int:
     ap.add_argument("--stack", default=None, choices=["a", "b"],
                     help="serving stack (agent/stacks.py): its proxy port, and this process "
                          "pinned to its GPU's NUMA node; default $ATK_STACK, else the single stack")
+    ap.add_argument("--no-power", action="store_true",
+                    help="do not record GPU/CPU power alongside the runs (on by default, "
+                         "except in record mode)")
     ap.add_argument("--base-url", default="",
                     help="proxy to use instead of the config's (or the stack's); provenance only, "
                          "not part of config_id. Used by parallel recording workers")
+    ap.add_argument("--difficulty-mix", default="",
+                    help="tasks per difficulty level, e.g. easy=10,medium=15,hard=10; "
+                         "overrides --per-difficulty and --limit")
     ap.add_argument("--per-difficulty", type=int, default=0,
                     help="trial run: N tasks from each difficulty level (e.g. 5 -> 5 easy, "
                          "5 medium, 5 hard), spread across task types; overrides --limit")
@@ -332,7 +363,9 @@ def main() -> int:
         print(f"!! tool_mode={cfg.tool_mode}: tools hit live APIs, so tool latency "
               f"and content are NOT comparable across runs")
     all_tasks = Task.load_all(args.tasks)
-    if args.per_difficulty:
+    if args.difficulty_mix:
+        tasks = select_difficulty_mix(all_tasks, parse_mix(args.difficulty_mix))
+    elif args.per_difficulty:
         tasks = select_per_difficulty(all_tasks, args.per_difficulty)
     else:
         tasks = select_tasks(all_tasks, args.limit)
@@ -394,6 +427,7 @@ def main() -> int:
     print(f"prompt_hash={list(runners.values())[0].prompt_hash} "
           f"tool_schema_hash={list(runners.values())[0].schema_hash}")
 
+    sampler = _start_power_sampler(args, cfg)
     fixture_totals: dict[str, int] = {}
     for idx, (task, repeat, framework) in enumerate(plan):
         rec = runners[framework].run_task(task, repeat, idx)
@@ -417,9 +451,52 @@ def main() -> int:
         if approx:
             print(f"  {approx} call(s) matched approximately; exclude or report them separately")
 
+    if sampler is not None:
+        # A few more samples, so the trace extends past the last run's end.
+        import time
+
+        time.sleep(0.5)
+        sampler.terminate()
+        sampler.wait(timeout=10)
     _release_proxy(cfg, session)
     print(f"\nwrote {Path(args.out).resolve()}")
     return 0
+
+
+def _start_power_sampler(args, cfg):
+    """Record GPU and CPU power into <out>/power.jsonl while the runs execute.
+
+    The export reads it to fill energy_gpu_j / energy_cpu_j, and
+    scripts/attribute_energy.py splits it into LLM, tool and orchestration
+    time. Skipped in record mode, where runs overlap and timings do not count.
+    """
+    import os
+    import subprocess
+    import sys
+
+    if args.no_power or cfg.tool_mode == "record":
+        return None
+    root = Path(__file__).resolve().parent.parent.parent
+    try:
+        proc = subprocess.Popen(
+            [sys.executable, "-u", str(root / "scripts" / "power_sampler.py"),
+             "--until-pid", str(os.getpid()), "--out", str(Path(args.out) / "power.jsonl")],
+            cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
+        )
+    except OSError as exc:
+        print(f"power sampler not started: {exc}")
+        return None
+    # Wait for the first samples, so the trace covers the first run too.
+    import time
+
+    trace = Path(args.out) / "power.jsonl"
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline:
+        if trace.exists() and trace.read_text().count("\n") >= 2:
+            break
+        time.sleep(0.1)
+    print(f"recording power -> {trace}")
+    return proc
 
 
 def _release_proxy(cfg, session: str) -> None:

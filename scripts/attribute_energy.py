@@ -83,8 +83,8 @@ class Trace:
             except OSError:
                 pass
         for v in values:
-            if v is None:
-                out.append(out[-1] if out else 0.0)
+            if v is None:  # not readable at that moment: unknown, not zero
+                out.append(float("nan"))
                 continue
             if last is not None and v < last:
                 offset += span
@@ -106,7 +106,21 @@ class Trace:
         return series[i - 1] + w * (series[i] - series[i - 1])
 
     def gpu_energy(self, a: float, b: float) -> float:
-        return sum(self._at(s, b) - self._at(s, a) for s in self.gpu_e)
+        return sum(self.gpu_energy_each(a, b))
+
+    def gpu_energy_each(self, a: float, b: float) -> list[float]:
+        """Per GPU: the driver's cumulative energy counter at b minus at a."""
+        return [self._at(s, b) - self._at(s, a) for s in self.gpu_e]
+
+    def gpu_power_integral(self, a: float, b: float) -> list[float]:
+        """Per GPU: trapezoid integral of the sampled power. Only a cross-check
+        on the counter; the counter is what the CSV reports."""
+        rows = self.samples(a, b)
+        out = []
+        for i in range(self.n_gpu):
+            pts = [(r["t"], r["g"][i][0]) for r in rows]
+            out.append(sum((t1 - t0) / 1000 * (p0 + p1) / 2 for (t0, p0), (t1, p1) in zip(pts, pts[1:])))
+        return out
 
     def gpu_idle_energy(self, a: float, b: float) -> float:
         return sum(self.idle_w) * (b - a) / 1000.0
@@ -115,7 +129,8 @@ class Trace:
         pkgs = [k for k in self.rapl if k.startswith("package")]
         if not pkgs:
             return None
-        return sum(self._at(self.cpu_e[k], b) - self._at(self.cpu_e[k], a) for k in pkgs)
+        total = sum(self._at(self.cpu_e[k], b) - self._at(self.cpu_e[k], a) for k in pkgs)
+        return None if total != total else total  # NaN: RAPL was unreadable at an endpoint
 
     def samples(self, a: float, b: float) -> list[dict]:
         return self.rows[bisect.bisect_left(self.t, a):bisect.bisect_right(self.t, b)]
@@ -179,7 +194,11 @@ def main() -> int:
     args = ap.parse_args()
 
     idle = [float(x) for x in args.idle_w.split(",") if x.strip()] or None
-    trace = Trace([Path(p) for pat in args.power for p in sorted(glob.glob(pat))], idle)
+    run_dirs = [Path(p) for pat in args.runs for p in sorted(glob.glob(pat))]
+    # The harness writes <run folder>/power.jsonl; a hand-started sampler, output/power/.
+    files = [Path(p) for pat in args.power for p in sorted(glob.glob(pat))]
+    files += [d / "power.jsonl" for d in run_dirs if (d / "power.jsonl").exists()]
+    trace = Trace(sorted(set(files)), idle)
     if not trace.t:
         raise SystemExit("no power samples found; start scripts/power_sampler.py before the runs")
     dirs = [Path(p) for pat in args.runs for p in sorted(glob.glob(pat))

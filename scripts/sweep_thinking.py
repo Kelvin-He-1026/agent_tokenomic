@@ -165,12 +165,17 @@ def record_parallel(config: Path, mode_dir: Path, args, workers: int) -> int:
     import json
 
     from agent import stacks
-    from agent.harness.cli import select_per_difficulty, select_tasks
+    from agent.harness.cli import (parse_mix, select_difficulty_mix, select_per_difficulty,
+                                   select_tasks)
     from agent.harness.runner import Task
 
     tasks = Task.load_all(ROOT / args.tasks)
-    tasks = (select_per_difficulty(tasks, args.per_difficulty) if args.per_difficulty
-             else select_tasks(tasks, args.limit))
+    if args.difficulty_mix:
+        tasks = select_difficulty_mix(tasks, parse_mix(args.difficulty_mix))
+    elif args.per_difficulty:
+        tasks = select_per_difficulty(tasks, args.per_difficulty)
+    else:
+        tasks = select_tasks(tasks, args.limit)
     workers = max(1, min(workers, len(tasks)))
     upstream = stacks.get().vllm_url
     shard_dir = mode_dir / "shards"
@@ -251,6 +256,8 @@ def main() -> int:
                     help="serving stack (agent/stacks.py); two sweeps can run at once on a and b")
     ap.add_argument("--per-difficulty", type=int, default=0,
                     help="trial sweep: N tasks per difficulty level; overrides --limit")
+    ap.add_argument("--difficulty-mix", default="",
+                    help="tasks per difficulty level, e.g. easy=10,medium=15,hard=10")
     ap.add_argument("--workers", type=int, default=1,
                     help="record mode only: split each mode across N parallel harnesses on one "
                          "server. Much faster, but timings are not clean, so it is for recording")
@@ -309,11 +316,15 @@ def main() -> int:
         items = json.loads((ROOT / args.tasks).read_text())
         n_tasks = len(items)
         n = min(args.limit, n_tasks) if args.limit else n_tasks
-        if args.per_difficulty:
+        if args.per_difficulty or args.difficulty_mix:
             levels: dict[str, int] = {}
             for it in items:
                 levels[it.get("difficulty", "unknown")] = levels.get(it.get("difficulty", "unknown"), 0) + 1
-            n = sum(min(args.per_difficulty, c) for c in levels.values())
+            if args.difficulty_mix:
+                from agent.harness.cli import parse_mix
+                n = sum(min(k, levels.get(lv, 0)) for lv, k in parse_mix(args.difficulty_mix).items())
+            else:
+                n = sum(min(args.per_difficulty, c) for c in levels.values())
         runs = n * args.repeats * len(args.frameworks.split(","))
         print(f"\n{len(modes)} restarts, {runs} runs per mode, {runs * len(modes)} runs total")
         print("dry run: configs written and validated; server untouched")
@@ -339,6 +350,7 @@ def main() -> int:
             "--repeats", str(args.repeats),
             "--limit", str(args.limit),
             "--per-difficulty", str(args.per_difficulty),
+            *(["--difficulty-mix", args.difficulty_mix] if args.difficulty_mix else []),
             *(["--stack", args.stack] if args.stack else []),
             "--out", str(out_root / mode),
             "--no-timestamp",  # the sweep root is already timestamped

@@ -65,5 +65,17 @@
     "task_version": "new runs fingerprint their task definition; changed definitions are not silently rescored",
     "accounting_revision": "The derived export reconstructs flags from raw calls; original telemetry is preserved. Outcome revision is independent of frozen task-definition fingerprints."
   },
-  "outcome_policy_version": "phase1-v2-p0-2"
+  "outcome_policy_version": "phase1-v2-p0-2",
+  "judge": {
+    "provider": "claude_code",
+    "model": "claude-opus-5-5",
+    "effort": "high",
+    "semantic_metric": "semantic_correctness (DeepEval GEval)",
+    "semantic_metric_version": "semantic-correctness-v1",
+    "rubric": "each task's grading_rubric, passed to the judge verbatim",
+    "threshold": "each task's evaluation.semantic_threshold (0.8 for all 20 judge-only tasks), compared inclusively on the 0-1 score",
+    "diagnostics": "faithfulness (and task_completion when requested) are reported but never used as correctness",
+    "identity": "judge_id = hash of provider, model, effort, evaluation_version and judge system prompt; the export uses exactly one judge_id",
+    "pinned": "2026-10-19; scripts/judge_runs.py defaults to this model and effort"
+  }
 }

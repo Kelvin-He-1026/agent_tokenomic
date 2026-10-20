@@ -358,6 +358,12 @@ setsid nohup .venv/bin/python -u scripts/power_sampler.py --until-pid <driver pi
     --idle-w 88 --out output/energy.csv     # idle: per-GPU W with the model loaded, no requests
 ```
 
+The harness now starts the sampler itself for every benchmark run (not in
+record mode), writing `<run folder>/power.jsonl`, and the export fills
+`energy_gpu_j` and `energy_cpu_j` per run from it (or from a trace in
+`output/power/`). Pass `--no-power` to skip it. Energy is left blank for runs
+that overlapped another run, since a shared window cannot be split per run.
+
 CPU power needs Intel RAPL, which is root-only here. To let the sampler read it
 until the next reboot: `sudo chmod o+r /sys/class/powercap/intel-rapl:*/energy_uj`.
 Without it, CPU energy columns stay empty and only CPU utilisation is recorded.
@@ -373,6 +379,27 @@ tool time folded into orchestration.
 identity, outcome, trajectory, tokens, the latency decomposition, resources,
 fixture-match counts and provenance hashes. `--calls` adds a second, long-form
 CSV with one row per LLM call, for reading trajectories step by step.
+
+Each call row also splits its prompt by source (`agent/prompt_breakdown.py`),
+counted with the served model's own tokenizer from the saved request:
+`system_prompt_tokens`, `conversation_history_tokens` (earlier assistant and
+user turns, including tool-call arguments), `tool_response_tokens` (every tool
+result in the request) and `current_user_prompt_tokens` (the latest user
+message). These count message text; `other_prompt_tokens` is the rest of the
+server's `prompt_tokens`, i.e. chat-template markup and the tool definitions,
+so the five add up to `prompt_tokens`. Counting is done at export, not in the
+proxy, so it never touches measured latency, and it works on older runs too as
+long as their request blobs were saved. The main CSV carries the same five
+columns summed over each run's calls.
+
+The export also writes each run's text (`agent/transcripts.py`), rebuilt from
+the saved requests and responses: `<out>_texts.csv` has, per run, the task
+question, the system prompt and user prompt as the framework sent them, the
+model's reasoning from every call, and the full final answer (cells are cut at
+32,000 characters for Excel, flagged in `truncated_in_csv`);
+`<out>_transcripts.jsonl` has the full text plus a call-by-call trace (the
+messages added since the previous call, such as tool results, and the model's
+text, reasoning and tool calls). `--no-texts` skips both.
 
 Nothing is filtered or corrected on export. Warm-up runs, framework errors and
 approximate fixture matches are all present and flagged by their own columns

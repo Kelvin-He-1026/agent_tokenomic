@@ -152,8 +152,12 @@ def main() -> int:
             fh.write(json.dumps({"t": round(time.time() * 1000, 1), "g": g, "c": c, "r": r},
                                 separators=(",", ":")) + "\n")
             n += 1
+            if n == 1:
+                fh.flush()  # lets a waiting harness see the trace has started
             if n % 50 == 0:
                 fh.flush()
+                if not rapl:  # e.g. someone ran the chmod after the sampler started
+                    rapl = rapl_domains()
                 if args.until_pid:
                     try:
                         os.kill(args.until_pid, 0)
