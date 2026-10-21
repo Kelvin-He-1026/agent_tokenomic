@@ -9,7 +9,8 @@ tool lists) are in `agent/`, like the rest of the harness.
 GAIA_stack/
 ├── README.md
 ├── configs/gaia_qwen_tp2.yaml   the GAIA cell: tools, limits, folders below
-├── run_gaia_35.py               unattended sweep: record -> clean sweep -> results
+├── run_gaia.py                  unattended sweep -> results
+├── status.sh                    where is the sweep? (read-only)
 ├── scripts/
 │   ├── fetch_gaia.py            rebuild tasks/ and documents/ from Hugging Face
 │   └── prepare_gaia.py          scoring, tool routes, text-only task list
@@ -99,24 +100,26 @@ text without an attachment; they fail in every mode.
 
 ## Running
 
-A recording pass (live web, timings not clean), then the clean
-replay sweep:
+GAIA records as it goes: one sweep, one run at a time, power recorded, tools in
+record mode. A search or page already recorded (same or reworded query) is
+replayed; anything new is fetched live and saved. Phase 1's method, a parallel
+recording pass and then a clean replay sweep, does not hold up on GAIA: over
+8-30 steps the replayed runs drift from what was recorded. In the first
+35-task sweep (2026-10-21) about 40% of searches matched a recording only
+approximately and about 35% of page fetches had none, touching more than half
+the runs. Recording as it goes gives every run real tool results; tool time is
+then live, but tools are about 1% of GPU energy and LLM time is measured
+separately.
+
+`run_gaia.py` does it unattended: thinking off / low / xhigh, LangGraph +
+OpenAI Agents SDK, then export, energy by phase and `summary.md`.
 
 ```bash
-.venv/bin/python scripts/sweep_thinking.py --base-config GAIA_stack/configs/gaia_qwen_tp2.yaml \
-    --tasks GAIA_stack/tasks/phase1-GAIA-text.json --modes off --repeats 1 \
-    --difficulty-mix easy=10,medium=15,hard=10 --frameworks langgraph,openai_agents \
-    --tool-mode record --workers 6
+nohup .venv/bin/python -u GAIA_stack/run_gaia.py --mix easy=10,medium=10,hard=10 > /dev/null 2>&1 &
+GAIA_stack/status.sh        # progress, any time
 ```
 
-`run_gaia_35.py` does the whole thing unattended for 10 L1 / 15 L2 / 10 L3
-tasks, thinking off / low / xhigh, LangGraph + OpenAI Agents SDK: it records
-each mode (with Tavily it first checks the remaining credits, since a search
-that fails for lack of credit would become a tool failure in the clean sweep),
-runs the clean sweep, then exports results, energy by phase and `summary.md`.
-
-```bash
-nohup .venv/bin/python -u GAIA_stack/run_gaia_35.py > /dev/null 2>&1 &
-```
+Results go to `output/runs/gaia_live_record_<N>_<stamp>/`. `--method
+record-then-replay` keeps the old method for comparison.
 
 Tests: `tests/test_gaia.py` (skipped when the task files have not been fetched).

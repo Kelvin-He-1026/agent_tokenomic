@@ -319,7 +319,7 @@ def main() -> int:
                          "pinned to its GPU's NUMA node; default $ATK_STACK, else the single stack")
     ap.add_argument("--no-power", action="store_true",
                     help="do not record GPU/CPU power alongside the runs (on by default, "
-                         "except in record mode)")
+                         "except for parallel recording workers)")
     ap.add_argument("--base-url", default="",
                     help="proxy to use instead of the config's (or the stack's); provenance only, "
                          "not part of config_id. Used by parallel recording workers")
@@ -471,13 +471,16 @@ def _start_power_sampler(args, cfg):
 
     The export reads it to fill energy_gpu_j / energy_cpu_j, and
     scripts/attribute_energy.py splits it into LLM, tool and orchestration
-    time. Skipped in record mode, where runs overlap and timings do not count.
+    time. Skipped for parallel recording workers (they pass --base-url), whose
+    runs overlap. A one-at-a-time record run is measured: its tools run live,
+    but LLM time and energy are as clean as in replay (GAIA records as it goes,
+    since its long trajectories drift away from a separate recording pass).
     """
     import os
     import subprocess
     import sys
 
-    if args.no_power or cfg.tool_mode == "record":
+    if args.no_power or (cfg.tool_mode == "record" and args.base_url):
         return None
     root = Path(__file__).resolve().parent.parent.parent
     try:
