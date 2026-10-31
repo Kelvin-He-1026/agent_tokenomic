@@ -69,15 +69,18 @@ ARGS=(
 # Splits reasoning into its own response field, so thinking tokens are counted
 # and kept out of the answer. vLLM reports reasoning_tokens only when this is set.
 [[ -n "$REASONING_PARSER" ]] && ARGS+=(--reasoning-parser "$REASONING_PARSER")
+# Stack h keeps vLLM on loopback so the Hermes sandbox can only reach it
+# through the proxy.
+[[ -n "$VLLM_HOST" ]] && ARGS+=(--host "$VLLM_HOST")
 
 echo "serving $SERVED_NAME from $MODEL_PATH  (config: $CONFIG)"
-echo "  stack=${STACK_NAME:-default} gpus=${STACK_GPUS:-all} numa=${NUMA_NODE:-unpinned}"
+echo "  stack=${STACK_NAME:-default} gpus=${STACK_GPUS:-all} numa=${NUMA_NODE:-unpinned} cpus=${CPUSET:-all}"
 echo "  tp=$TP port=$PORT tool-parser=$TOOL_PARSER reasoning-parser=${REASONING_PARSER:-none} max_num_seqs=$MAX_NUM_SEQS"
 echo "  thinking=$THINKING effort=${REASONING_EFFORT:-n/a} template-kwargs=$TEMPLATE_KWARGS"
 
 # Record what is being launched, for preflight to check against the config.
 mkdir -p output
-STACK_NAME=$STACK_NAME STACK_GPUS=$STACK_GPUS NUMA_NODE=$NUMA_NODE \
+STACK_NAME=$STACK_NAME STACK_GPUS=$STACK_GPUS NUMA_NODE=$NUMA_NODE CPUSET=$CPUSET \
 .venv/bin/python - "$CONFIG" "$PORT" "$MAX_NUM_SEQS" <<'PY'
 import json, os, sys, time
 from pathlib import Path
@@ -102,6 +105,7 @@ Path(f"output/serving_{port}.json").write_text(json.dumps({
     "stack": os.environ.get("STACK_NAME", ""),
     "gpus": os.environ.get("STACK_GPUS", ""),
     "numa_node": os.environ.get("NUMA_NODE", ""),
+    "cpuset": os.environ.get("CPUSET", ""),
 }, indent=2))
 PY
 
@@ -125,5 +129,6 @@ fi
 export VLLM_USE_FLASHINFER_SAMPLER=${VLLM_USE_FLASHINFER_SAMPLER:-0}
 
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
-# $PIN is empty without a stack; with one it binds vLLM to the GPU's NUMA node.
+# $PIN is empty without a stack; with one it binds vLLM to the GPU's NUMA node,
+# or to ATK_CPUS_PER_SOCKET cores per socket (agent/stacks.py).
 exec $PIN "${VLLM:-.venv/bin/vllm}" serve "${ARGS[@]}"

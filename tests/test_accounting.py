@@ -17,8 +17,10 @@ from agent.telemetry import RunRecord
 class ProxyBudgetTests(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.directory = tempfile.TemporaryDirectory()
-        self.saved_state = dict(server.state)
-        server.state.update(run_id="unbound", session="", inflight=0, call_idx=0)
+        self.saved_state, self.saved_runs = dict(server.state), dict(server.runs)
+        server.runs.clear()
+        server.runs["unbound"] = server.RunState("unbound", self.directory.name)
+        server.state.update(current="unbound", session="", last_bind=0.0)
         self.requests = []
         self.fail_transport = False
         self.omit_usage = False
@@ -54,6 +56,8 @@ class ProxyBudgetTests(unittest.IsolatedAsyncioTestCase):
         self.client_patch.stop()
         server.state.clear()
         server.state.update(self.saved_state)
+        server.runs.clear()
+        server.runs.update(self.saved_runs)
         server._writers.pop(self.directory.name, None)
         self.directory.cleanup()
 
@@ -140,11 +144,11 @@ class ProxyBudgetTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_deadline_blocks_new_generation_without_charging_a_model_call(self):
         await self.bind()
-        server.state["deadline"] = 0
+        server.runs["run-test"].deadline = 0
         response = await self.generate()
         self.assertEqual(response.json()["error"]["code"], "timeout")
         self.assertEqual(len(self.requests), 0)
-        self.assertEqual(server.state["blocked_requests"], 1)
+        self.assertEqual(server.runs["run-test"].blocked_requests, 1)
 
     async def test_multiple_samples_and_concurrent_requests_cannot_bypass_budget(self):
         await self.bind()
@@ -154,16 +158,109 @@ class ProxyBudgetTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_forced_finalization_is_detected_on_the_wire(self):
         await self.bind()
-        server.state["forced_final_markers"] = ["force final marker"]
+        server.runs["run-test"].forced_final_markers = ["force final marker"]
         await self.generate(messages=[{"role": "user", "content": "force final marker"}])
         self.assertTrue(self.rows()[0]["forced_final_answer"])
 
     async def test_normal_user_and_tool_messages_do_not_mark_forced_finalization(self):
         await self.bind()
-        server.state["forced_final_markers"] = ["force final marker"]
+        server.runs["run-test"].forced_final_markers = ["force final marker"]
         await self.generate(messages=[{"role": "tool", "content": "force final marker"},
                                       {"role": "user", "content": "ordinary question"}])
         self.assertFalse(self.rows()[0]["forced_final_answer"])
+
+    async def test_concurrent_runs_keep_separate_budgets_and_rows(self):
+        for run_id in ("run-a", "run-b"):
+            response = await self.client.post("/control/run", json={
+                "run_id": run_id, "concurrent": True, "out_dir": self.directory.name, "session": "test",
+                "limits": {"max_llm_calls": 1, "max_tokens_per_call": 5,
+                           "max_total_output_tokens": 5, "task_timeout_s": 60}})
+            self.assertEqual(response.status_code, 200)
+        body = {"model": "mock", "messages": [{"role": "user", "content": "q"}]}
+        self.assertEqual((await self.client.post("/r/run-a/v1/chat/completions", json=body)).status_code, 200)
+        # The header route, which Hermes uses: the sandbox allows only /v1 paths.
+        response = await self.client.post("/v1/chat/completions", json=body, headers={"X-Run-Id": "run-b"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual((await self.client.post("/r/run-a/v1/chat/completions", json=body)).status_code, 429)
+        self.assertEqual(sorted(r["run_id"] for r in self.rows()), ["run-a", "run-b"])
+        b = (await self.client.get("/control/pending", params={"run_id": "run-b"})).json()
+        self.assertEqual((b["call_idx"], b["termination_reason"]), (1, ""))
+        a = (await self.client.get("/control/pending", params={"run_id": "run-a"})).json()
+        self.assertEqual(a["termination_reason"], "call_cap")
+        # Concurrent binds leave the plain route on the run bound last.
+        self.assertEqual(server.state["current"], "unbound")
+
+    async def test_ended_run_refuses_requests_without_changing_its_ending(self):
+        await self.bind(calls=5)
+        await self.client.post("/control/end", json={"run_id": "run-test"})
+        response = await self.generate()
+        self.assertEqual(response.json()["error"]["code"], "run_ended")
+        self.assertEqual(len(self.requests), 0)
+        state = (await self.client.get("/control/pending")).json()
+        self.assertEqual((state["termination_reason"], state["ended"]), ("", True))
+        # Closed by the harness (no reason given): "finished"; the refusal is counted.
+        self.assertEqual((state["ended_by"], state["refused_after_end"], state["upstream_errors"]),
+                         ("finished", 1, 0))
+
+    async def test_first_close_reason_is_kept(self):
+        await self.bind(calls=5)
+        await self.client.post("/control/end", json={"run_id": "run-test", "reason": "level_end"})
+        await self.client.post("/control/end", json={"run_id": "run-test", "reason": "finished"})
+        state = (await self.client.get("/control/pending")).json()
+        self.assertEqual(state["ended_by"], "level_end")
+
+
+class EnergyShareTests(unittest.TestCase):
+    def test_gpu_follows_llm_calls_and_cpu_splits_among_runs_in_flight(self):
+        from agent.energy_share import UNATTRIBUTED, apportion
+
+        # 1 J/ms on each channel; run a 0-100, run b 50-150; only a calls
+        # the LLM, 0-80; 150-200 has no run in flight.
+        counters = {"gpu0": lambda t: t, "package-0": lambda t: t}
+        out = apportion(counters, {"a": (0, 100), "b": (50, 150), "c": (200, 200)},
+                        {"a": [(0, 80)]}, {"gpu0"})
+        self.assertAlmostEqual(out["a"]["gpu0"], 80 + 10)  # its call, then half of 80-100
+        self.assertAlmostEqual(out["b"]["gpu0"], 10 + 50)
+        self.assertAlmostEqual(out["a"]["package-0"], 50 + 25)
+        self.assertAlmostEqual(out["b"]["package-0"], 25 + 50)
+        self.assertEqual(out[UNATTRIBUTED]["gpu0"], 0)
+        self.assertAlmostEqual(sum(v["gpu0"] for v in out.values()), 150)
+
+
+class StackPinningTests(unittest.TestCase):
+    def test_cores_per_socket_take_the_gpu_node_first_then_its_neighbours(self):
+        import tempfile
+
+        from agent.stacks import cpulist, socket_cpus
+
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "cpu").mkdir()
+            (root / "cpu/online").write_text("0-15\n")
+            for c in range(16):
+                (root / f"cpu/cpu{c}/topology").mkdir(parents=True)
+                (root / f"cpu/cpu{c}/topology/physical_package_id").write_text(str(c // 8))
+            for n, cpus in enumerate(("0-3", "4-7", "8-11", "12-15")):
+                (root / f"node/node{n}").mkdir(parents=True)
+                (root / f"node/node{n}/cpulist").write_text(cpus)
+            self.assertEqual(cpulist(socket_cpus(6, (1, 3), root)), "2-7,10-15")
+            with self.assertRaises(SystemExit):
+                socket_cpus(9, (1, 3), root)
+
+
+class SpanTests(unittest.TestCase):
+    def test_spans_tile_the_run_and_name_orchestration(self):
+        from agent.spans import build_spans
+
+        calls = [{"call_id": "c1", "call_idx": 1, "request_ts": 100, "latency_ms": 50},
+                 {"call_id": "c2", "call_idx": 2, "request_ts": 200, "latency_ms": 50}]
+        tools = [{"tool_name": "web_search", "tool_call_id": "t1", "start_ts": 160, "latency_ms": 20}]
+        spans = build_spans("r", (0, 300), calls, tools, [("hermes_boot", 10, 60)])
+        self.assertEqual([(s.kind, s.name, s.start_ts, s.end_ts) for s in spans], [
+            ("orch", "startup", 0, 10), ("orch", "hermes_boot", 10, 60), ("orch", "startup", 60, 100),
+            ("llm", "call_1", 100, 150), ("orch", "loop", 150, 160), ("tool", "web_search", 160, 180),
+            ("orch", "loop", 180, 200), ("llm", "call_2", 200, 250), ("orch", "finish", 250, 300)])
+        self.assertEqual(sum(s.dur_ms for s in spans), 300)
 
 
 class TerminationTests(unittest.TestCase):

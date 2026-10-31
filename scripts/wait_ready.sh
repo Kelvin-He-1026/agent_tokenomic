@@ -14,7 +14,7 @@ PORT=${PORT:-$VLLM_PORT}
 TIMEOUT_S=${TIMEOUT_S:-600}
 LOG=${LOG:-/tmp/vllm_serve.log}
 URL="http://127.0.0.1:${PORT}/v1/models"
-[[ "$PORT" == "$PROXY_PORT" ]] && URL="http://127.0.0.1:${PORT}/control/health"
+[[ "$PORT" == "$PROXY_PORT" ]] && URL="http://${PROXY_HOST}:${PORT}/control/health"
 
 echo "waiting for $URL (up to ${TIMEOUT_S}s)"
 start=$(date +%s)

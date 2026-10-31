@@ -189,10 +189,18 @@ class RunConfig:
     tools: tuple[str, ...] = ()
     # Where read_file looks for task attachments (GAIA).
     attachments_dir: str = "GAIA_stack/documents"
-    # Search engine behind web_search: "tavily" (API key, credits) or "ddg"
-    # (DuckDuckGo via ddgs, no key). Hashed into config_id only when not the
-    # default, so Phase 1 config_ids do not change.
+    # Search engine behind web_search: "tavily" (API key, credits), "ddg"
+    # (DuckDuckGo via ddgs, no key) or "keenable" (no key, as Hermes uses it).
+    # Hashed into config_id only when not the default, so Phase 1 config_ids do
+    # not change.
     web_search_backend: str = "tavily"
+    # How fetch_url gets a page: "direct" from this host, or "keenable" (page
+    # text from its extractor). Hashed into config_id the same way.
+    web_fetch_backend: str = "direct"
+    # Settings for an agent product run as shipped (framework: hermes), such as
+    # the sandbox, profile and toolsets. Empty for the framework cells; hashed
+    # into config_id only when set, so their config_ids do not change.
+    hermes: dict[str, Any] = field(default_factory=dict)
 
     # Environment provenance, filled by the harness at run time.
     framework_version: str = ""
@@ -215,6 +223,10 @@ class RunConfig:
         }
         if self.web_search_backend != "tavily":
             payload["web_search_backend"] = self.web_search_backend
+        if self.web_fetch_backend != "direct":
+            payload["web_fetch_backend"] = self.web_fetch_backend
+        if self.hermes:
+            payload["hermes"] = self.hermes
         blob = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
@@ -285,5 +297,6 @@ def _plain(obj: Any) -> Any:
 _PROVENANCE = {"framework_version", "vllm_version", "hardware_id", "numa_pinning", "base_url"}
 # Covered by another hash (tools -> tool_schema_hash), a location rather than a
 # condition (attachments_dir), or added to config_id only when not the default
-# (web_search_backend). Left out so existing config_ids do not change.
-_PROVENANCE |= {"tools", "attachments_dir", "web_search_backend"}
+# (web_search_backend, web_fetch_backend, hermes). Left out so existing
+# config_ids do not change.
+_PROVENANCE |= {"tools", "attachments_dir", "web_search_backend", "web_fetch_backend", "hermes"}

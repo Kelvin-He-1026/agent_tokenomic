@@ -5,10 +5,13 @@ from __future__ import annotations
 from ..config import RunConfig
 from .base import AgentAdapter, AgentResult
 
-FRAMEWORKS = ("langgraph", "crewai", "openai_agents")
+FRAMEWORKS = ("langgraph", "crewai", "openai_agents", "hermes")
 
 
-def get_adapter(name: str, cfg: RunConfig) -> AgentAdapter:
+def get_adapter(name: str, cfg: RunConfig, slot: str = "") -> AgentAdapter:
+    """slot: which concurrent virtual user this adapter serves. Only agents
+    that keep state outside the harness process (Hermes's profile in its
+    sandbox) use it, to keep concurrent runs apart."""
     if name == "langgraph":
         from ..langGraph.react_agent import LangGraphReActAgent
 
@@ -21,6 +24,10 @@ def get_adapter(name: str, cfg: RunConfig) -> AgentAdapter:
         from ..openai_agents.react_agent import OpenAIAgentsReActAgent
 
         return OpenAIAgentsReActAgent(cfg)
+    if name == "hermes":
+        from ..hermes.oneshot_agent import HermesOneShotAgent
+
+        return HermesOneShotAgent(cfg, slot)
     raise ValueError(f"unknown framework '{name}'; expected one of {FRAMEWORKS}")
 
 

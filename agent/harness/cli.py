@@ -14,6 +14,7 @@ thermals or cache state cannot favour whichever framework ran first.
 from __future__ import annotations
 
 import argparse
+import json
 import random
 import uuid
 from dataclasses import replace
@@ -312,9 +313,17 @@ def main() -> int:
         help="allow writing into a directory that already holds runs (off by "
              "default: mixing two executions silently corrupts the joins)",
     )
+    ap.add_argument(
+        "--resume",
+        default="",
+        metavar="RUN_DIR",
+        help="finish an interrupted execution in RUN_DIR, with the same --config, "
+             "--tasks, --frameworks, --repeats, --seed and selection flags: runs "
+             "already recorded are skipped, the rest join the original session",
+    )
     ap.add_argument("--limit", type=int, default=0,
                     help="sample N tasks, spread across task types (0 = all tasks)")
-    ap.add_argument("--stack", default=None, choices=["a", "b"],
+    ap.add_argument("--stack", default=None, choices=["a", "b", "h"],
                     help="serving stack (agent/stacks.py): its proxy port, and this process "
                          "pinned to its GPU's NUMA node; default $ATK_STACK, else the single stack")
     ap.add_argument("--no-power", action="store_true",
@@ -337,7 +346,9 @@ def main() -> int:
              "and every call is saved as a fixture for later replay.",
     )
     args = ap.parse_args()
-    if not args.no_timestamp:
+    if args.resume:
+        args.out = args.resume.rstrip("/")
+    elif not args.no_timestamp:
         # Every run gets its own directory, so repeated invocations never
         # overwrite or mix with each other.
         args.out = f"{args.out.rstrip('/')}_{file_stamp()}"
@@ -383,7 +394,14 @@ def main() -> int:
     if unknown:
         raise SystemExit(f"unknown frameworks: {sorted(unknown)}")
 
-    session = f"sess_{uuid.uuid4().hex[:10]}"
+    out_dir = Path(args.out)
+    planned = _read_jsonl(out_dir / "plan.jsonl") if args.resume else []
+    if args.resume:
+        sessions = {r["session"] for r in planned}
+        if len(sessions) != 1:
+            raise SystemExit(f"--resume needs a folder with one planned session, "
+                             f"{out_dir} has {len(sessions)}")
+    session = sessions.pop() if args.resume else f"sess_{uuid.uuid4().hex[:10]}"
     runners = {
         f: Runner(
             replace(cfg, framework=f),
@@ -395,8 +413,7 @@ def main() -> int:
         for f in frameworks
     }
 
-    out_dir = Path(args.out)
-    if (out_dir / "run.jsonl").exists() and not args.append:
+    if (out_dir / "run.jsonl").exists() and not (args.append or args.resume):
         n = sum(1 for _ in open(out_dir / "run.jsonl"))
         raise SystemExit(
             f"{out_dir} already holds {n} run(s).\n"
@@ -422,17 +439,32 @@ def main() -> int:
         print(f"warmed retrieval in {warm_ms:.0f}ms")
 
     plan = build_plan(tasks, frameworks, args.repeats, args.seed)
-    for idx, (task, repeat, framework) in enumerate(plan):
-        runner = runners[framework]
-        runner.writer.write(PlanRecord(session, runner.config_id, task.task_id, repeat, idx))
-    print(f"{len(plan)} runs -> {args.out}"
+    done: set[tuple[str, str, int]] = set()
+    if args.resume:
+        # The rebuilt plan must be the recorded one, run for run, or the
+        # resumed runs would fill a different cell than the one planned.
+        rebuilt = [(runners[f].config_id, t.task_id, r, i) for i, (t, r, f) in enumerate(plan)]
+        recorded = [(p["config_id"], p["task_id"], p["repeat_idx"], p["run_order_idx"]) for p in planned]
+        if rebuilt != recorded:
+            raise SystemExit(f"--resume: these arguments plan different runs from {out_dir}/plan.jsonl; "
+                             "pass the original --config, --tasks, --frameworks, --repeats and --seed")
+        done = {(r["config_id"], r["task_id"], r["repeat_idx"])
+                for r in _read_jsonl(out_dir / "run.jsonl")}
+    else:
+        for idx, (task, repeat, framework) in enumerate(plan):
+            runner = runners[framework]
+            runner.writer.write(PlanRecord(session, runner.config_id, task.task_id, repeat, idx))
+    print(f"{len(plan) - len(done)} runs -> {args.out}"
+          + (f"  (resuming {session}: {len(done)} of {len(plan)} already done)" if args.resume else "")
           + (f"  (run code: {args.run_code})" if args.run_code else ""))
     print(f"prompt_hash={list(runners.values())[0].prompt_hash} "
           f"tool_schema_hash={list(runners.values())[0].schema_hash}")
 
-    sampler = _start_power_sampler(args, cfg)
+    sampler = _start_power_sampler(args, cfg, stack.vllm_url + "/metrics")
     fixture_totals: dict[str, int] = {}
     for idx, (task, repeat, framework) in enumerate(plan):
+        if (runners[framework].config_id, task.task_id, repeat) in done:
+            continue
         rec = runners[framework].run_task(task, repeat, idx)
         for kind, n in runners[framework].last_fixture_matches.items():
             fixture_totals[kind] = fixture_totals.get(kind, 0) + n
@@ -466,7 +498,7 @@ def main() -> int:
     return 0
 
 
-def _start_power_sampler(args, cfg):
+def _start_power_sampler(args, cfg, vllm_url: str = ""):
     """Record GPU and CPU power into <out>/power.jsonl while the runs execute.
 
     The export reads it to fill energy_gpu_j / energy_cpu_j, and
@@ -486,7 +518,9 @@ def _start_power_sampler(args, cfg):
     try:
         proc = subprocess.Popen(
             [sys.executable, "-u", str(root / "scripts" / "power_sampler.py"),
-             "--until-pid", str(os.getpid()), "--out", str(Path(args.out) / "power.jsonl")],
+             "--until-pid", str(os.getpid()), "--out", str(Path(args.out) / "power.jsonl"),
+             *(["--append"] if args.resume else []),
+             *(["--vllm-url", vllm_url] if vllm_url else [])],
             cwd=root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True,
         )
     except OSError as exc:
@@ -503,6 +537,12 @@ def _start_power_sampler(args, cfg):
         time.sleep(0.1)
     print(f"recording power -> {trace}")
     return proc
+
+
+def _read_jsonl(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
 def _release_proxy(cfg, session: str) -> None:

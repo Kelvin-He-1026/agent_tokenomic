@@ -149,6 +149,12 @@ class ToolListTests(unittest.TestCase):
         ddg = RunConfig.from_dict({**phase1.to_dict(), "web_search_backend": "ddg"})
         self.assertNotEqual(phase1.config_id("p", "t"), ddg.config_id("p", "t"))
 
+    def test_fetch_backend(self):
+        phase1 = RunConfig.from_yaml(ROOT / "configs/pilot_qwen_tp2.yaml")
+        keenable = RunConfig.from_dict({**phase1.to_dict(), "web_fetch_backend": "keenable"})
+        self.assertEqual(phase1.web_fetch_backend, "direct")
+        self.assertNotEqual(phase1.config_id("p", "t"), keenable.config_id("p", "t"))
+
     def test_tool_list_does_not_change_config_id(self):
         cfg = RunConfig.from_yaml(ROOT / "configs/pilot_qwen_tp2.yaml")
         other = RunConfig.from_dict({**cfg.to_dict(), "tools": ["read_file"]})
@@ -160,6 +166,48 @@ class ToolListTests(unittest.TestCase):
         p = task_prompt(t)
         self.assertIn(t["file_name"], p)
         self.assertIn("FINAL ANSWER", p)
+
+
+class KeenableTests(unittest.TestCase):
+    cfg = replace(GAIA_CFG, web_search_backend="keenable", web_fetch_backend="keenable")
+
+    @staticmethod
+    def reply(body=None, error=None):
+        resp = mock.Mock()
+        resp.json.return_value = body
+        resp.raise_for_status.side_effect = error
+        return resp
+
+    def test_search_formats_results_like_the_other_engines(self):
+        body = {"results": [{"title": "T", "url": "https://a.org", "snippet": "s" * 400}]}
+        with mock.patch("requests.request", return_value=self.reply(body)) as req:
+            text = impl.live_web_search("q", self.cfg)
+        self.assertEqual(impl.LAST_SEARCH_ENGINE, "keenable")
+        self.assertEqual(req.call_args.args[:2], ("POST", "https://api.keenable.ai/v1/search/public"))
+        self.assertEqual(req.call_args.kwargs["json"], {"query": "q", "max_results": 5})
+        self.assertEqual(text, "Sources:\n\n1. T\n   URL: https://a.org\n   " + "s" * 300 + "...")
+
+    def test_empty_search_is_a_result(self):
+        with mock.patch("requests.request", return_value=self.reply({"results": []})):
+            self.assertEqual(impl.live_web_search("q", self.cfg), "No results found.")
+
+    def test_fetch_uses_the_extractor_and_the_page_cap(self):
+        body = {"url": "https://a.org/x", "content": "c" * 13000}
+        with mock.patch("requests.request", return_value=self.reply(body)) as req:
+            text = impl.live_fetch_url("https://a.org", self.cfg)
+        self.assertEqual(req.call_args.kwargs["params"], {"url": "https://a.org"})
+        self.assertTrue(text.startswith("URL: https://a.org/x\n\nccc"))
+        self.assertIn("more characters not shown", text)
+
+    def test_fetch_still_refuses_private_addresses(self):
+        with mock.patch("requests.request") as req, self.assertRaises(ToolFailure):
+            impl.live_fetch_url("http://127.0.0.1/x", self.cfg)
+        req.assert_not_called()
+
+    def test_http_errors_are_tool_failures(self):
+        with mock.patch("requests.request", return_value=self.reply(error=RuntimeError("429"))):
+            with self.assertRaisesRegex(ToolFailure, "keenable failed"):
+                impl.live_web_search("q", self.cfg)
 
 
 if __name__ == "__main__":

@@ -12,7 +12,8 @@ def completion_type(status: str, reason: str = "", forced: bool = False,
         if reason == "natural_stop" or (not reason and last_finish_reason == "stop"):
             return "natural_completion"
         return "unknown_completion"
-    return {"step_limit": "step_limit", "truncated": "truncated", "timeout": "timeout"}.get(status, "error")
+    return {"step_limit": "step_limit", "truncated": "truncated", "timeout": "timeout",
+            "cancelled": "cancelled"}.get(status, "error")
 
 
 def cap_hits(run: dict, calls: list[dict], config: dict | None = None) -> dict[str, Any]:

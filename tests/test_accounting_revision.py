@@ -18,6 +18,7 @@ class AccountingRevisionTests(unittest.TestCase):
                 "completion_tokens": 8192, "effective_output_cap": 8192}
         runner = object.__new__(Runner)
         runner.writer = SimpleNamespace(read=lambda _: [call])
+        runner.adapter = SimpleNamespace()  # an in-process framework: tools via the registry
         runner._proxy_snapshot = {"blocked_requests": 0, "termination_reason": ""}
         record = RunRecord("r", "c", "t", 0, 0, 0, max_llm_calls=10,
                            max_tokens_per_call=8192, max_total_output_tokens=81920)

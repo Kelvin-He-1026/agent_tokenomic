@@ -92,6 +92,13 @@ proxy's view becomes visible, which is itself a finding.
 absorbs measurement error, which is why the mock upstream exists — it can
 measure orchestration overhead directly, with no GPU.
 
+Every run also writes `span.jsonl` (`agent/spans.py`): its window tiled into
+timestamped `llm`, `tool` and `orch` spans. Orchestration spans are named by
+what the adapter knows was happening (Hermes: `exec_launch`, `profile_restore`,
+`hermes_boot`, `agent_setup`, `hermes_exit`, `exec_return`), otherwise by
+position (`startup`, `loop`, `finish`), so a power or CPU trace can be cut at
+the same moments.
+
 ## Running
 
 ### One-time setup
@@ -314,8 +321,8 @@ each stays at concurrency 1. Defined in `agent/stacks.py`:
 
 | Stack | GPU | NUMA node (cores) | vLLM | Proxy |
 | --- | --- | --- | --- | --- |
-| `a` | 0 | 1 (43-85) | 8000 | 8100 |
-| `b` | 1 | 3 (129-171) | 8001 | 8101 |
+| `a` | 0 | 0 (0-47,96-143) | 8000 | 8100 |
+| `b` | 1 | 1 (48-95,144-191) | 8001 | 8101 |
 | none | all | unpinned | 8000 | 8100 |
 
 Set `ATK_STACK=a` or `b` for the shell scripts, and pass `--stack a|b` to the
@@ -337,7 +344,7 @@ ATK_STACK=b ./scripts/stop_stack.sh --all     # stops stack b only
 - A config with `tp_size: 2` (the 70B) needs both GPUs and is refused on a
   stack; run it with no stack, alone.
 - Stack `a` and no stack use the same GPU and ports, so do not mix them.
-- Each run records `hardware_id` (`gpu1`) and `numa_pinning` (`node3`). The
+- Each run records `hardware_id` (`gpu1`) and `numa_pinning` (`node1`). The
   proxy address is provenance too, so the same cell has the same `config_id`
   on either stack.
 - `./scripts/status.sh` shows both stacks. Two sweeps hold separate locks
@@ -362,17 +369,81 @@ setsid nohup .venv/bin/python -u scripts/power_sampler.py --until-pid <driver pi
 The harness now starts the sampler itself for every benchmark run (not in
 record mode), writing `<run folder>/power.jsonl`, and the export fills
 `energy_gpu_j` and `energy_cpu_j` per run from it (or from a trace in
-`output/power/`). Pass `--no-power` to skip it. Energy is left blank for runs
-that overlapped another run, since a shared window cannot be split per run.
+`output/power/`). Pass `--no-power` to skip it. A run alone on the machine
+gets the counters' difference over its window (`energy_method` "exclusive").
+Runs of one run folder that overlapped (a load test) get their share of the
+machine's energy (`agent/energy_share.py`, `energy_method` "shared"): at each
+moment, GPU energy is split among the runs with an LLM call at vLLM, CPU energy
+among the runs in flight, so the shares add up to the machine's energy. An
+equal split between batched requests is a convention; compare sums over many
+runs. Energy stays blank where runs from another folder overlapped (parallel
+recording on two stacks, each on its own GPU).
 
 CPU power needs Intel RAPL, which is root-only here. To let the sampler read it
 until the next reboot: `sudo chmod o+r /sys/class/powercap/intel-rapl:*/energy_uj`.
 Without it, CPU energy columns stay empty and only CPU utilisation is recorded.
 
-Per-run splits are only meaningful when runs do not overlap: parallel recording
-(`--workers`) runs several at once, so `overlap_runs` > 0 there and only totals
-are usable. Tool calls carry a `start_ts` from 2026-10-16 on; older runs have
+In `attribute_energy.py`'s CSV, the per-phase columns are the whole machine over
+the run's window, so they are per-run figures only where `overlap_runs` is 0;
+`gpu_share_j`/`cpu_share_j` are the shared figures above, the ones to sum over
+overlapping runs. Tool calls carry a `start_ts` from 2026-10-16 on; older runs have
 tool time folded into orchestration.
+
+Since 2026-10-28 the sampler also records, every 500 ms from a side thread:
+CPU time per process group (`vllm`, `proxy`, `harness` (in-process frameworks
+such as LangGraph), `hermes_cli`, `openshell_gw`, `sampler`), the OpenShell
+sandbox container's cgroup counters (CPU, CFS throttling, CPU pressure, memory,
+tasks), host clock, thermal-throttle and CPU-pressure counters, and vLLM's
+`/metrics` (requests running and waiting, KV-cache usage, preemptions, prefix
+cache, token counters). Per GPU it adds SM clock, temperature and clock-event
+(throttle) reasons. `attribute_energy.py --stages-out stages.csv` cuts each run
+along its spans and reports, per stage, time, GPU and CPU energy, per-GPU
+utilisation and CPU-seconds per process group, with a per-framework summary of
+the runs that ran alone.
+
+## Concurrency (load) test
+
+`agent/harness/load.py` runs N virtual users in a closed loop: each user takes
+the next task as soon as its previous one ends, so N tasks are always in flight.
+Levels run in order (e.g. `--levels 1,4,8,16,32`); each runs the task mix in
+whole passes (at least `--min-runs`, and `--runs-per-user` per user), and filler
+runs keep the load at N until the last measured run ends (recorded with
+`measured=False`, outside every figure). The level then closes its fillers at
+the proxy; one closed while its agent was still working ends `cancelled`
+(`closed_by` "level_end"), a benchmark shutdown rather than a failure. Each run is an ordinary benchmark run
+with its own budget at the proxy: in-process frameworks address it as
+`/r/<run_id>/v1`, Hermes with an `X-Run-Id` header. One row per level goes to
+`levels.jsonl` and `load_levels.csv`: successful tasks per minute, P50/P95
+end-to-end latency, success rate, infrastructure error rate, and, from the
+trace, vLLM running/waiting, KV-cache usage, GPU utilisation and energy, CPU by
+group and throttling.
+
+Terms: `unique_tasks` is the mix (24 distinct GAIA questions in load_v1),
+`measured_runs` the runs counted in the quality figures, `filler_runs` further
+runs of the same tasks that keep the load at N. Which runs each figure uses:
+
+| Question | Runs used |
+|---|---|
+| Agent quality: success rate, P50/P95 latency, infrastructure errors | `measured=True` only |
+| CPU/GPU concurrent capacity: vLLM queue, KV cache, GPU utilisation, CPU by group, throttling | the whole window: measured and filler runs together, the real load |
+| `successful_tasks_per_min`, `tasks_per_min`, `gpu_kj_per_success`, `total_kj_per_success` | every eligible task completed in the window (`completed_in_window`, `successes_in_window`): measured runs and fillers that started and ended inside it on their own, over the window's time and its whole GPU and CPU energy (`*_energy_window_j`) |
+
+Fillers that finish inside the window lean toward the shorter tasks. For
+comparison, `successful_tasks_per_min_little` is the measured runs' steady rate
+by Little's law (N x successes / sum of their e2e), and
+`gpu_energy_measured_j`/`cpu_energy_measured_j` (with `*_kj_per_success_measured`)
+their share of the window's energy as above. Infrastructure errors are split
+into `inference_errors` (an LLM call failed at or past vLLM; `upstream_errors`
+per run) and `framework_errors`; fillers that failed on their own, before the
+level closed them, are counted in `filler_infra_errors`. The sweep stops at the first level whose P95 is above 2x
+the single-user P95, whose success rate is more than 5 points below it, or
+whose infrastructure errors and timeouts exceed 5% (`--max-p95-ratio`,
+`--max-success-drop`, `--max-infra-pct`, `--no-stop`).
+
+```bash
+ATK_STACK=h .venv/bin/python -u -m agent.harness.load --stack h --config <cell.yaml> \
+    --tasks <tasks.json> --framework langgraph --levels 1,4,8,16,32 --out output/runs/load_lg
+```
 
 ## Results
 

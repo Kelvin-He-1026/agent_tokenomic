@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-SCHEMA_VERSION = "0.6.0"
+SCHEMA_VERSION = "0.7.1"
 
 
 def new_id(prefix: str = "") -> str:
@@ -88,7 +88,9 @@ class RunRecord:
     end_ts: float = 0.0
     e2e_ms: float = 0.0
     # completed | step_limit (budget ran out) | truncated (answer hit max_tokens)
-    # | timeout | framework_error. Decided from the proxy, not the framework.
+    # | timeout | framework_error | cancelled (closed by the benchmark while
+    # its agent was still working: a load test's filler at the end of a
+    # level). Decided from the proxy, not the framework.
     status: str = "completed"
     final_answer: str = ""
     error: str = ""
@@ -138,6 +140,44 @@ class RunRecord:
     # Free-text label for what this execution was for (--run-code). Not part of
     # config_id: it names the run, it is not a controlled variable.
     run_code: str = ""
+    # Load test (agent/harness/load.py): how many virtual users were running,
+    # which one ran this, and whether the run counts toward the level's
+    # figures (False: a filler that only kept the load up while the level's
+    # last counted runs finished).
+    concurrency: int = 1
+    vu_idx: int = -1
+    measured: bool = True
+    # Who closed the run at the proxy first ("finished": the harness, after
+    # the agent returned; "level_end": the load test), and how many of its
+    # LLM calls failed at or past vLLM (HTTP or connection errors; streams the
+    # benchmark cut are not counted). Tells a benchmark shutdown apart from an
+    # inference-service failure.
+    closed_by: str = ""
+    upstream_errors: int = 0
+    schema_version: str = SCHEMA_VERSION
+
+
+@dataclass
+class SpanRecord:
+    """One timed stretch of a run, on the wall clock (ms).
+
+    A run's spans tile its window from start_ts to end_ts:
+      llm   a model request, from the proxy's llm_call row
+      tool  a tool call: the shared tool layer's timing, or the agent's own
+            (Hermes's plugin, for tools that run in its sandbox)
+      orch  everything else. Named by what the adapter knows was happening
+            (Hermes: exec_launch, profile_restore, hermes_boot, agent_setup,
+            exec_return), else by position: startup before the first model or
+            tool call, loop between them, finish after the last.
+    """
+    run_id: str
+    span_idx: int
+    kind: str  # llm | tool | orch
+    name: str
+    start_ts: float
+    end_ts: float
+    dur_ms: float
+    ref_id: str = ""  # call_id or tool_call_id
     schema_version: str = SCHEMA_VERSION
 
 
@@ -255,6 +295,7 @@ _TABLES = {
     HwSampleRecord: "hw_sample",
     EvalRecord: "eval",
     PlanRecord: "plan",
+    SpanRecord: "span",
 }
 
 

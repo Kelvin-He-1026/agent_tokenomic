@@ -110,7 +110,8 @@ def live_fred_releases(window: str, cfg: RunConfig) -> str:
 
 
 # The engine that produced the last live web_search result, saved with the
-# fixture ("tavily" or "ddg"; tavily_then_ddg can give either).
+# fixture ("tavily", "ddg" or "keenable"; tavily_then_ddg can give either of the
+# first two).
 LAST_SEARCH_ENGINE = ""
 
 
@@ -119,9 +120,11 @@ def live_web_search(query: str, cfg: RunConfig) -> str:
     backend = cfg.web_search_backend
     if backend == "tavily_then_ddg":
         return _tavily_then_ddg(query, cfg)
-    if backend not in ("tavily", "ddg"):
+    if backend not in ("tavily", "ddg", "keenable"):
         raise ToolFailure(f"unknown web_search_backend '{backend}'")
     LAST_SEARCH_ENGINE = backend
+    if backend == "keenable":
+        return live_keenable_search(query, cfg)
     return live_ddg_search(query, cfg) if backend == "ddg" else live_tavily_search(query, cfg)
 
 
@@ -205,6 +208,8 @@ def _tavily_then_ddg(query: str, cfg: RunConfig) -> str:
 DDG_MIN_INTERVAL_S = 1.5  # between searches, across all parallel recorders
 DDG_ATTEMPTS = 4
 DDG_SNIPPET = 300  # characters per result, as for Tavily
+KEENABLE_URL = "https://api.keenable.ai"
+KEENABLE_APP = "agent-tokenomics-benchmark"  # the keyless tier requires an app id
 
 
 def _ddg_throttle(cfg: RunConfig) -> None:
@@ -259,18 +264,42 @@ def live_ddg_search(query: str, cfg: RunConfig) -> str:
         if results:
             break
         time.sleep(3 * (attempt + 1))
+    return _sources([(r.get("title"), r.get("href"), r.get("body")) for r in results])
+
+
+def _sources(results: list[tuple[Any, Any, Any]]) -> str:
+    """(title, url, snippet) rows as the model sees them, for any snippet engine."""
     if not results:
         return "No results found."
-
     lines = ["Sources:"]
-    for i, r in enumerate(results, 1):
-        body = (r.get("body") or "").strip()
+    for i, (title, url, snippet) in enumerate(results, 1):
+        body = (snippet or "").strip()
         if len(body) > DDG_SNIPPET:
             body = body[:DDG_SNIPPET] + "..."
-        lines.append(f"\n{i}. {r.get('title') or 'No title'}")
-        lines.append(f"   URL: {r.get('href', '')}")
+        lines.append(f"\n{i}. {title or 'No title'}")
+        lines.append(f"   URL: {url or ''}")
         lines.append(f"   {body}")
     return "\n".join(lines)
+
+
+def _keenable(method: str, path: str, **kwargs: Any) -> dict[str, Any]:
+    """One call to Keenable's public keyless tier, the one Hermes's web tools use."""
+    import requests
+
+    try:
+        resp = requests.request(method, f"{KEENABLE_URL}{path}", timeout=30,
+                                headers={"X-Keenable-Title": KEENABLE_APP}, **kwargs)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception as exc:
+        raise ToolFailure(f"keenable failed: {exc}") from exc
+
+
+def live_keenable_search(query: str, cfg: RunConfig) -> str:
+    """Keenable's own web index, no key. Sources only, as for ddg."""
+    data = _keenable("POST", "/v1/search/public", json={"query": query, "max_results": 5})
+    return _sources([(r.get("title"), r.get("url"), r.get("snippet") or r.get("description"))
+                     for r in data.get("results") or []])
 
 
 _VECTORSTORE: Any = None
@@ -404,6 +433,9 @@ def live_fetch_url(url: str, cfg: RunConfig) -> str:
         raise ToolFailure(f"only http(s) URLs can be fetched, got '{url[:100]}'")
     if _blocked_host(parsed.hostname):
         raise ToolFailure(f"refusing to fetch a local or private address: {parsed.hostname}")
+    if cfg.web_fetch_backend == "keenable":
+        data = _keenable("GET", "/v1/fetch/public", params={"url": url.strip()})
+        return _cap(f"URL: {data.get('url') or url.strip()}\n\n{data.get('content') or ''}", MAX_PAGE_TEXT)
     try:
         resp = requests.get(url.strip(), timeout=20, allow_redirects=True,
                             headers={"User-Agent": "Mozilla/5.0 (agent-tokenomics benchmark)"})

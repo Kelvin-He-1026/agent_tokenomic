@@ -14,9 +14,9 @@ if [[ "${1:-}" == "--mock" ]]; then
   echo "mock upstream  pid=$! port=$VLLM_PORT"
 fi
 
-ATK_UPSTREAM="$UPSTREAM" $PIN "$VENV/uvicorn" agent.proxy.server:app --port "$PROXY_PORT" --log-level warning \
+ATK_UPSTREAM="$UPSTREAM" $PIN "$VENV/uvicorn" agent.proxy.server:app --host "$PROXY_HOST" --port "$PROXY_PORT" --log-level warning \
   > "/tmp/atk_proxy${STACK_NAME:+_$STACK_NAME}.log" 2>&1 &
-echo "logging proxy  pid=$! port=$PROXY_PORT upstream=$UPSTREAM"
+echo "logging proxy  pid=$! $PROXY_HOST:$PROXY_PORT upstream=$UPSTREAM"
 
 sleep 4
-curl -s "http://127.0.0.1:$PROXY_PORT/control/health" && echo
+curl -s "http://$PROXY_HOST:$PROXY_PORT/control/health" && echo

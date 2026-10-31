@@ -28,11 +28,15 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 
 from agent import prompt_breakdown, transcripts
 from agent.accounting import cap_hits
+from agent.energy_share import apportion, llm_windows
 from agent.evaluation import OUTCOME_POLICY_VERSION
 
 COLUMNS = [
     # identity
     "run_id", "config_id", "run_dir", "run_dir_path", "run_code", "framework", "framework_version",
+    # load test (agent/harness/load.py): virtual users at the time, which user,
+    # and False for filler runs, which only kept the load up and count nowhere
+    "concurrency", "vu_idx", "measured", "closed_by", "upstream_errors",
     "session", "task_fingerprint", "task_definition_matches",
     "architecture", "model_repo", "precision", "tp_size",
     "task_id", "repeat_idx", "run_order_idx", "is_first_in_dir",
@@ -43,7 +47,8 @@ COLUMNS = [
     "difficulty", "semantic_correct", "execution_completed", "strict_success", "format_success",
     "completion_type", "natural_completion", "outcome_policy_version",
     # one label per run: success | wrong_answer | format_failure | tool_failure
-    # | step_limit | output_truncation | timeout | framework_error | pending_judge
+    # | step_limit | output_truncation | timeout | cancelled | framework_error
+    # | pending_judge
     "failure_category",
     "score_source", "score_state", "evaluation_version",
     # LLM judge (DeepEval, scripts/judge_runs.py); empty where not yet scored
@@ -157,6 +162,11 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
             "run_dir": run_dir.name,
             "run_dir_path": str(run_dir.resolve()),
             "run_code": r.get("run_code", ""),
+            "concurrency": r.get("concurrency", 1),
+            "vu_idx": r.get("vu_idx", -1),
+            "measured": r.get("measured", True),
+            "closed_by": r.get("closed_by", ""),
+            "upstream_errors": r.get("upstream_errors", ""),
             "session": r.get("session", ""),
             "task_fingerprint": r.get("task_fingerprint", ""),
             "framework": cfg.get("framework", ""),
@@ -229,7 +239,7 @@ def flatten_dir(run_dir: Path) -> list[dict[str, Any]]:
 
             "proc_cpu_ms": round(r["proc_cpu_ms"], 1),
             "peak_rss_mb": round(r["peak_rss_mb"], 1),
-            **run_energy(r),
+            **run_energy(r, str(run_dir.resolve())),
 
             "fixture_exact": matches.count("exact"),
             "fixture_normalized": matches.count("normalized"),
@@ -310,8 +320,9 @@ def quality_report(dirs: list[Path], rows: list[dict]) -> dict:
     cells = []
     for directory in dirs:
         plans = read_jsonl(directory / "plan.jsonl")
-        local = [r for r in rows if r.get("run_dir_path", r["run_dir"]) == str(directory.resolve())
-                 or (not r.get("run_dir_path") and r["run_dir"] == directory.name)]
+        local = [r for r in rows if (r.get("run_dir_path", r["run_dir"]) == str(directory.resolve())
+                 or (not r.get("run_dir_path") and r["run_dir"] == directory.name))
+                 and r.get("measured", True) is not False]
         groups = {(r["config_id"], r.get("session", "")) for r in local + plans}
         for config_id, session in sorted(groups):
             actual = [r for r in local if (r["config_id"], r.get("session", "")) == (config_id, session)]
@@ -376,37 +387,54 @@ def cell_key(r: dict) -> str:
             f"{r.get('accounting_policy', '?')}/{r.get('budget_enforced', False)} cfg={r.get('config_id', '?')}")
 
 
-# Power traces from scripts/power_sampler.py, and every exported run's window.
-# Set in main(); used by run_energy().
+# Power traces from scripts/power_sampler.py, and every exported run's window
+# (start, end, run folder, run_id). Set in main(); used by run_energy().
 ENERGY_TRACE = None
-RUN_WINDOWS: list[tuple[float, float]] = []
+RUN_WINDOWS: list[tuple[float, float, str, str]] = []
+# Per run, its share of the energy of the time it overlapped other runs of
+# its own run folder (a load test): agent/energy_share.py.
+SHARED_ENERGY: dict[str, dict[str, float]] = {}
 
 
-def run_energy(r: dict[str, Any]) -> dict[str, Any]:
+def run_energy(r: dict[str, Any], run_dir: str = "") -> dict[str, Any]:
     """GPU and CPU energy (J) for one run, from a power trace covering it.
 
-    Blank when no trace covers the run, or when another exported run overlapped
-    it (parallel recording): energy over a shared window cannot be split per
-    run. CPU energy needs readable RAPL counters during the run.
+    A run alone on the machine gets the counters' difference over its window
+    (energy_method "exclusive"). A run that overlapped others of its own run
+    folder (a load test) gets its share of the machine's energy while they
+    were in flight together (energy_method "shared"): GPU energy split among
+    the runs with an LLM call at vLLM, CPU energy among all runs in flight.
+    Shares are a convention; sum them over many runs. Blank when no trace
+    covers the run, or when runs from another folder overlapped it (parallel
+    recording on two stacks, each on its own GPU). CPU energy needs readable
+    RAPL counters during the run.
     """
     out = {"energy_gpu_j": r.get("energy_gpu_j") or "", "energy_cpu_j": r.get("energy_cpu_j") or "",
            "energy_gpu0_j": "", "energy_gpu1_j": "", "energy_total_j": "", "energy_method": ""}
     a, b = r.get("start_ts"), r.get("end_ts")
     if ENERGY_TRACE is None or not a or not b or not ENERGY_TRACE.covers(a, b):
         return out
-    if sum(1 for x, y in RUN_WINDOWS if x < b and y > a) > 1:
-        out["energy_method"] = "overlapping runs: not attributable"
-        return out
-    each = ENERGY_TRACE.gpu_energy_each(a, b)
+    others = [(d, rid) for x, y, d, rid in RUN_WINDOWS if x < b and y > a and rid != r["run_id"]]
+    if others:
+        share = SHARED_ENERGY.get(r["run_id"])
+        if share is None or any(d != run_dir for d, _ in others):
+            out["energy_method"] = "overlapping runs: not attributable"
+            return out
+        each = [share.get(f"gpu{i}", 0.0) for i in range(ENERGY_TRACE.n_gpu)]
+        pkgs = [k for k in share if k.startswith("package")]
+        cpu = sum(share[k] for k in pkgs) if pkgs and ENERGY_TRACE.cpu_energy(a, b) is not None else None
+        method = "shared: GPU among runs with an LLM call in flight, CPU among runs in flight"
+    else:
+        each = ENERGY_TRACE.gpu_energy_each(a, b)
+        cpu = ENERGY_TRACE.cpu_energy(a, b)
+        method = "exclusive: NVML energy counter, all GPUs"
     out["energy_gpu_j"] = round(sum(each), 2)
     for i, e in enumerate(each[:2]):
         out[f"energy_gpu{i}_j"] = round(e, 2)
-    cpu = ENERGY_TRACE.cpu_energy(a, b)
     out["energy_cpu_j"] = "" if cpu is None else round(cpu, 2)
     out["energy_total_j"] = "" if cpu is None else round(sum(each) + cpu, 2)
-    out["energy_method"] = ("gpu: NVML energy counter, all GPUs; "
-                            + ("cpu: RAPL package counters, both sockets" if cpu is not None
-                               else "cpu: not measured (RAPL unreadable)"))
+    out["energy_method"] = method + ("; cpu: RAPL package counters, both sockets" if cpu is not None
+                                     else "; cpu: not measured (RAPL unreadable)")
     return out
 
 
@@ -438,13 +466,13 @@ def load_energy(dirs: list[Path]) -> None:
     """Find power traces for these runs: each run folder's power.jsonl (written
     by the harness), plus any in output/power/ (a sampler started by hand)."""
     global ENERGY_TRACE, RUN_WINDOWS
-    RUN_WINDOWS = [(r["start_ts"], r["end_ts"]) for d in dirs for r in read_jsonl(d / "run.jsonl")
-                   if r.get("start_ts") and r.get("end_ts")]
+    RUN_WINDOWS = [(r["start_ts"], r["end_ts"], str(d.resolve()), r["run_id"]) for d in dirs
+                   for r in read_jsonl(d / "run.jsonl") if r.get("start_ts") and r.get("end_ts")]
     files = [d / "power.jsonl" for d in dirs if (d / "power.jsonl").exists()]
     files += [Path(p) for p in sorted(glob.glob(str(ROOT_DIR / "output" / "power" / "*.jsonl")))]
     if not files or not RUN_WINDOWS:
         return
-    lo, hi = min(a for a, _ in RUN_WINDOWS), max(b for _, b in RUN_WINDOWS)
+    lo, hi = min(w[0] for w in RUN_WINDOWS), max(w[1] for w in RUN_WINDOWS)
     from attribute_energy import Trace  # scripts/ is on sys.path when run as a script
 
     def overlaps(f: Path) -> bool:
@@ -456,6 +484,14 @@ def load_energy(dirs: list[Path]) -> None:
     files = [f for f in files if overlaps(f)]
     if files:
         ENERGY_TRACE = Trace(files)
+        t = ENERGY_TRACE
+        counters = {f"gpu{i}": (lambda x, s=s: t._at(s, x)) for i, s in enumerate(t.gpu_e)}
+        counters.update({k: (lambda x, s=t.cpu_e[k]: t._at(s, x)) for k in t.rapl if k.startswith("package")})
+        for d in dirs:
+            windows = {rid: (a, b) for a, b, dd, rid in RUN_WINDOWS if dd == str(d.resolve())}
+            if len(windows) > 1:
+                SHARED_ENERGY.update(apportion(counters, windows, llm_windows(read_jsonl(d / "llm_call.jsonl")),
+                                               {c for c in counters if c.startswith("gpu")}))
 
 
 # Excel stops at 32,767 characters per cell; the JSONL keeps the full text.

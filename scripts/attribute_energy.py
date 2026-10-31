@@ -7,7 +7,7 @@ the CPU, replayed web results), and the rest of each run is orchestration
 (framework code, prompt building, parsing).
 
     python scripts/attribute_energy.py --runs "output/runs/thinking_sweep_*/*" \\
-        --out output/energy.csv
+        --out output/energy.csv [--stages-out output/stages.csv]
     # power files default to output/power/*.jsonl; pass --power to choose
 
 Per run, for each phase (llm, tool, orch) and in total:
@@ -19,9 +19,27 @@ Per run, for each phase (llm, tool, orch) and in total:
                  includes idle periods
   cpu_*_j        CPU package energy, when RAPL was readable (else empty)
   gpu_util_*     mean SM utilisation (%), cpu_busy_* mean CPU busy fraction
-  overlap_runs   other runs in flight at the same time. Parallel recording
-                 overlaps runs on purpose; their energy cannot be split per
-                 run, so only rows with overlap_runs == 0 are per-run figures.
+  overlap_runs   other runs in flight at the same time. The figures above are
+                 the whole machine over the run's window, so they are per-run
+                 figures only where overlap_runs == 0; summed over
+                 overlapping runs they count the same energy several times.
+  gpu_share_j,   the run's share of the machine's energy (agent/energy_share.py:
+  cpu_share_j    GPU energy split among the runs of its run folder with an LLM
+                 call in flight, CPU energy among those in flight). Equal to
+                 the totals for a run alone; for a load test's overlapping
+                 runs, the figure to sum (energy_attribution "shared").
+
+--stages-out: where the run folder has span.jsonl (harness 0.7+), one row per
+run and stage, a stage being a span kind and name (llm, tool:<tool>,
+orch:<name>, see agent/spans.py). Besides the columns above, per stage:
+  gpu<i>_util     mean SM utilisation of each GPU (%)
+  cpu_<group>_s   CPU-seconds each process group used in the stage (vllm,
+                  proxy, harness, hermes_cli, openshell_gw, sampler, and
+                  sandbox, the OpenShell container's cgroup), from the
+                  trace's slow samples (power_sampler.py, every 500 ms), so a
+                  stage shorter than that is apportioned by interpolation
+A summary of the non-overlapping runs (each run alone on the machine) is
+printed per framework: where the time, the GPU energy and the CPU went.
 """
 
 from __future__ import annotations
@@ -32,7 +50,11 @@ import csv
 import glob
 import json
 import statistics
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from agent.energy_share import apportion, llm_windows  # noqa: E402
 
 
 def read_jsonl(path: Path) -> list[dict]:
@@ -66,6 +88,38 @@ class Trace:
         self.idle_from_trace = not idle_w
         self.rapl = sorted({k for r in rows for k in r.get("r", {})})
         self.cpu_e = {k: self._unwrap([r["r"].get(k) for r in rows], k) for k in self.rapl}
+        # Slow samples (process groups, sandbox cgroup), on their own clock.
+        slow = sorted((r for r in rows if "ts" in r and "p" in r), key=lambda r: r["ts"])
+        self.slow_t = [r["ts"] for r in slow]
+        self.groups = sorted({g for r in slow for g in r["p"]})
+        self.group_ms = {g: self._carry([r["p"].get(g, [None])[0] for r in slow]) for g in self.groups}
+        if any(r.get("cg", {}).get("sandbox") for r in slow):
+            self.groups.append("sandbox")
+            self.group_ms["sandbox"] = self._carry([(r.get("cg", {}).get("sandbox") or [None])[0] for r in slow])
+
+    @staticmethod
+    def _carry(values: list[float | None]) -> list[float]:
+        """Fill gaps with the last known value (a group can appear mid-trace)."""
+        out, last = [], 0.0
+        for v in values:
+            last = v if v is not None else last
+            out.append(last)
+        return out
+
+    def group_cpu_s(self, a: float, b: float) -> dict[str, float]:
+        """CPU-seconds per process group between a and b."""
+        if len(self.slow_t) < 2:
+            return {}
+        def at(series, t):
+            i = bisect.bisect_left(self.slow_t, t)
+            if i <= 0:
+                return series[0]
+            if i >= len(self.slow_t):
+                return series[-1]
+            t0, t1 = self.slow_t[i - 1], self.slow_t[i]
+            w = (t - t0) / (t1 - t0) if t1 > t0 else 0.0
+            return series[i - 1] + w * (series[i] - series[i - 1])
+        return {g: (at(v, b) - at(v, a)) / 1000.0 for g, v in self.group_ms.items()}
 
     @staticmethod
     def _pct(values: list[float], p: float) -> float:
@@ -183,11 +237,88 @@ def phase_stats(trace: Trace, intervals: list[tuple[float, float]]) -> dict:
     }
 
 
+def stage_stats(trace: Trace, intervals: list[tuple[float, float]]) -> dict:
+    """phase_stats, plus per-GPU utilisation and CPU-seconds per process group."""
+    out = phase_stats(trace, intervals)
+    samples = [s for a, b in intervals for s in trace.samples(a, b)]
+    for i in range(trace.n_gpu):
+        out[f"gpu{i}_util"] = statistics.mean(s["g"][i][2] for s in samples) if samples else None
+    cpu: dict[str, float] = {}
+    for a, b in intervals:
+        for g, sec in trace.group_cpu_s(a, b).items():
+            cpu[g] = cpu.get(g, 0.0) + sec
+    for g in trace.groups:
+        out[f"cpu_{g}_s"] = cpu.get(g)
+    return out
+
+
+def write_stages(path: Path, trace: Trace, runs: list, windows: list) -> None:
+    """One row per run and stage (span kind and name), and a printed summary."""
+    rows = []
+    for d, r, cfg, calls, tools in runs:
+        spans = [s for s in read_jsonl(d / "span.jsonl") if s["run_id"] == r["run_id"]] \
+            if (d / "span.jsonl").exists() else []
+        win = (r["start_ts"], r["end_ts"])
+        if not spans or not trace.covers(*win):
+            continue
+        overlap = sum(1 for a, b in windows if a < win[1] and b > win[0]) - 1
+        stages: dict[tuple[str, str], list] = {}
+        for sp in spans:
+            name = sp["kind"] if sp["kind"] == "llm" else f"{sp['kind']}:{sp['name']}"
+            stages.setdefault((sp["kind"], name), []).append((sp["start_ts"], sp["end_ts"]))
+        # Tool spans can overlap each other (parallel tool calls) and, in
+        # Hermes, the model calls around them; energy is cut on merged time.
+        for (kind, name), iv in stages.items():
+            st = stage_stats(trace, clip(merge(iv), win))
+            row = {"run_id": r["run_id"], "run_dir": d.name, "task_id": r["task_id"],
+                   "framework": cfg.get("framework", ""), "concurrency": r.get("concurrency", 1),
+                   "overlap_runs": overlap, "status": r["status"], "stage_kind": kind, "stage": name,
+                   "n_spans": len(iv)}
+            row.update({k: "" if v is None else round(v, 3) for k, v in st.items()})
+            rows.append(row)
+    if not rows:
+        print("stages: no run folder has span.jsonl inside the trace")
+        return
+    cols = list(dict.fromkeys(k for row in rows for k in row))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=cols, restval="")
+        w.writeheader()
+        w.writerows(rows)
+    print(f"wrote {path}  ({len(rows)} run-stage rows)")
+
+    solo = [x for x in rows if x["overlap_runs"] == 0]
+    groups = [c[4:-2] for c in cols if c.startswith("cpu_") and c.endswith("_s")]
+    for fw in sorted({x["framework"] for x in solo}):
+        mine = [x for x in solo if x["framework"] == fw]
+        n_runs = len({x["run_id"] for x in mine})
+        tot_s = sum(x["s"] for x in mine) or 1
+        tot_gpu = sum(x["gpu_active_j"] or 0 for x in mine) or 1
+        print(f"\n{fw}: {n_runs} runs alone on the machine; per run, by stage")
+        print(f"  {'stage':26s} {'sec':>7s} {'time%':>6s} {'GPU kJ':>7s} {'GPU+%':>6s} {'CPU kJ':>7s} "
+              f"{'GPU util':>8s}  CPU cores by group")
+        by_stage: dict[str, list] = {}
+        for x in mine:
+            by_stage.setdefault(x["stage"], []).append(x)
+        for stage, xs in sorted(by_stage.items(), key=lambda kv: -sum(x["s"] for x in kv[1])):
+            sec = sum(x["s"] for x in xs)
+            cores = {g: sum(x.get(f"cpu_{g}_s") or 0 for x in xs) / sec for g in groups if sec}
+            util = [x["gpu_util"] for x in xs if x["gpu_util"] != ""]
+            cpu_kj = sum(x["cpu_j"] or 0 for x in xs) / 1000 / n_runs
+            print(f"  {stage:26s} {sec / n_runs:7.1f} {100 * sec / tot_s:5.1f}% "
+                  f"{sum(x['gpu_j'] for x in xs) / 1000 / n_runs:7.2f} "
+                  f"{100 * sum(x['gpu_active_j'] or 0 for x in xs) / tot_gpu:5.1f}% {cpu_kj:7.2f} "
+                  f"{statistics.mean(util) if util else 0:7.0f}%  "
+                  + " ".join(f"{g}={c:.2f}" for g, c in cores.items() if c >= 0.005))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", nargs="+", required=True, help="run directories (globs allowed)")
     ap.add_argument("--power", nargs="*", default=["output/power/*.jsonl"])
     ap.add_argument("--out", default="output/energy.csv")
+    ap.add_argument("--stages-out", default="",
+                    help="also write per-run, per-stage figures from span.jsonl (see above)")
     ap.add_argument("--idle-w", default="",
                     help="idle power per GPU in W, one value or comma-separated per GPU "
                          "(measure with the model loaded and no requests: nvidia-smi)")
@@ -217,6 +348,13 @@ def main() -> int:
                          tools.get(r["run_id"], [])))
 
     windows = sorted((r["start_ts"], r["end_ts"]) for _, r, *_ in runs)
+    counters = {f"gpu{i}": (lambda x, v=v: trace._at(v, x)) for i, v in enumerate(trace.gpu_e)}
+    counters.update({k: (lambda x, v=trace.cpu_e[k]: trace._at(v, x)) for k in trace.rapl if k.startswith("package")})
+    shared: dict[str, dict[str, float]] = {}
+    for d in dirs:
+        mine = {r["run_id"]: (r["start_ts"], r["end_ts"]) for dd, r, *_ in runs if dd == d}
+        calls_d = [c for dd, _, _, cs, _ in runs if dd == d for c in cs]
+        shared.update(apportion(counters, mine, llm_windows(calls_d), {c for c in counters if c.startswith("gpu")}))
     rows, skipped = [], 0
     for d, r, cfg, calls, tools in runs:
         win = (r["start_ts"], r["end_ts"])
@@ -234,8 +372,14 @@ def main() -> int:
             "framework": cfg.get("framework", ""), "model": cfg.get("model_repo", ""),
             "thinking": cfg.get("thinking_setting", ""), "effort": cfg.get("reasoning_effort", ""),
             "tp_size": cfg.get("tp_size", ""), "status": r["status"], "overlap_runs": overlap,
+            "concurrency": r.get("concurrency", 1), "measured": r.get("measured", True),
             "tool_times_recorded": all(t.get("start_ts") for t in tools),
         }
+        sh = shared.get(r["run_id"], {})
+        row["energy_attribution"] = "exclusive" if overlap == 0 else "shared"
+        row["gpu_share_j"] = round(sum(v for k, v in sh.items() if k.startswith("gpu")), 3)
+        cpu_sh = [v for k, v in sh.items() if k.startswith("package")]
+        row["cpu_share_j"] = round(sum(cpu_sh), 3) if cpu_sh and trace.cpu_energy(*win) is not None else ""
         for name, iv in (("total", [win]), ("llm", llm), ("tool", tool), ("orch", orch)):
             st = phase_stats(trace, iv)
             for k, v in st.items():
@@ -245,6 +389,8 @@ def main() -> int:
 
     if not rows:
         raise SystemExit(f"no run fell inside the power trace ({skipped} outside it)")
+    if args.stages_out:
+        write_stages(Path(args.stages_out), trace, runs, windows)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w", newline="") as fh:

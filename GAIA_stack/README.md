@@ -71,6 +71,10 @@ answers.
     ran out, so in a sweep it is not balanced across modes: check the split
     before comparing modes. `web_search_backend` values other than `tavily`
     enter `config_id`. Plain `tavily` and plain `ddg` are also available.
+  - `keenable` searches Keenable's keyless tier, the engine Hermes uses. With
+    `web_fetch_backend: keenable`, `fetch_url` gets page text from Keenable's
+    extractor too. Both need their own `fixtures_dir`: otherwise record mode
+    reuses fixtures made by the other engines.
 - `fetch_url` returns a page's text (HTML stripped, PDFs extracted), capped at
   12,000 characters. It is recorded and replayed like `web_search`, by exact
   URL, so a GAIA cell needs a record pass before replay runs. It refuses
