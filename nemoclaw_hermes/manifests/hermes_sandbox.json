@@ -1,0 +1,31 @@
+{
+  "agent": "hermes",
+  "agentVersion": "0.21.3",
+  "nemoclawVersion": "0.0.137",
+  "openshellVersion": "0.0.116",
+  "imageTag": "ghcr.io/nvidia/nemoclaw/hermes-sandbox@sha256:97a53c328ba8c98d8f0c338f5648e28ad29a88fb1f99c07a7c6ba25f07075d63",
+  "provider": "vllm-local",
+  "model": "Qwen/Qwen3.8-27B",
+  "endpointUrl": "http://host.openshell.internal:8000/v1",
+  "preferredInferenceApi": "openai-completions",
+  "toolDisclosure": "progressive",
+  "webSearchEnabled": false,
+  "appliedPolicySelection": {
+    "schemaVersion": 1,
+    "source": "verified_selection",
+    "tier": "balanced"
+  },
+  "hermesApiPort": 8642,
+  "sandbox": "gaia-hermes",
+  "hermes_version": "Hermes Agent v0.21.3 (2026.9.14)",
+  "bench_profile": "bench",
+  "bench_profile_config_sha16": "f0d3d40f74807bb2",
+  "policy_presets": [
+    "brew-balanced [user-added]",
+    "huggingface [user-added]",
+    "npm [user-added]",
+    "pypi [user-added]",
+    "hermes-keyless-web [user-added]"
+  ],
+  "written_at": "2026-10-30T12:55:54"
+}

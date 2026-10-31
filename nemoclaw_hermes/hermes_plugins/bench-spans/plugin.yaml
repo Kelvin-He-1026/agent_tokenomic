@@ -1,0 +1,9 @@
+name: bench-spans
+version: "1.0.0"
+description: "agent_tokenomic benchmark: timestamps Hermes's tool calls and API requests into $HERMES_BENCH_SPANS, so the harness can split a run into LLM, tool and orchestration time. Inert when the variable is unset."
+author: agent_tokenomic
+hooks:
+  - pre_tool_call
+  - post_tool_call
+  - pre_api_request
+  - post_api_request

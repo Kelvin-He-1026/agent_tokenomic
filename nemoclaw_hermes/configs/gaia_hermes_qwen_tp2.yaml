@@ -1,0 +1,82 @@
+# GAIA cell for NemoClaw Hermes, run as shipped, on the same model and server
+# settings as agent_tokenomic/GAIA_stack/configs/gaia_qwen_tp2.yaml.
+#
+# Serve and proxy on stack h (agent_tokenomic/agent/stacks.py): vLLM on
+# 127.0.0.1:8002, the logging proxy on 172.18.0.1:8000, which is where the
+# sandbox's recorded route (host.openshell.internal:8000) lands. Every Hermes
+# LLM call therefore goes through the proxy without touching the sandbox's
+# NemoClaw-managed route or network policy.
+#
+# The model block must match the GAIA cell so the frameworks can run
+# interleaved in the same plan against one server: --frameworks hermes,langgraph
+framework: hermes
+as_of_date: '2026-04-06'
+base_url: http://172.18.0.1:8000/v1
+api_key: EMPTY
+tool_mode: replay
+fixtures_dir: GAIA_stack/fixtures
+web_search_backend: tavily_then_ddg
+retrieval_top_k: 5
+models_dir: model
+embedding_model: BAAI/bge-large-en-v1.5
+embedding_local_dir: bge-large-en-v1.5
+chroma_dir: db/chroma
+embedding_device: cpu
+chroma_collection: documents
+model:
+  repo: Qwen/Qwen3.8-27B
+  local_dir: Qwen3.8-27B
+  revision: main
+  served_name: Qwen/Qwen3.8-27B
+  precision: bf16
+  tp_size: 2
+  max_model_len: 131072
+  gpu_memory_utilization: 0.9
+  tool_call_parser: qwen3_xml
+  reasoning_parser: qwen3
+  thinking_setting: 'off'
+  reasoning_effort: ''
+sampling:
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 16384
+  seed: 1234
+  stream: true
+limits:
+  max_llm_calls: 30
+  request_timeout_s: 300
+  task_timeout_s: 1800
+  client_retries: 0
+  parallel_tool_calls: false
+# Used by the framework adapters when they run interleaved with hermes.
+# Hermes uses its own tools, chosen by hermes.toolsets below.
+tools:
+- web_search
+- fetch_url
+- read_file
+attachments_dir: GAIA_stack/documents
+hermes:
+  sandbox: gaia-hermes
+  profile: bench              # isolated profile, restored from a snapshot before every run
+  # Hermes toolsets offered per run (hermes -t). web: search + extract,
+  # file: read_file and friends, code_execution: python for xlsx/csv/pdf work.
+  # Memory, session_search, skills, delegation and cron are left out: they carry
+  # state between runs or start background work.
+  toolsets: web,file,code_execution
+  # agent.max_turns in the profile; one below max_llm_calls so Hermes's own
+  # final call fits inside the proxy's cap instead of being refused.
+  max_turns: 29
+  docs_dir: /sandbox/gaia_docs  # GAIA attachments, uploaded by setup_sandbox.sh
+  yolo: true                    # no approval prompts; the sandbox policy is the boundary
+  # Hermes's keyless web tier round-robins each search across Exa, Parallel,
+  # Firecrawl and Keenable, and moves to the next vendor only on a rate-limit
+  # error. Any other error (Firecrawl's 403 from the sandbox policy, Exa's
+  # occasional "Unrecognized MCP response shape") goes straight back to the
+  # model. web_backend starts every search and extract at one vendor (the others
+  # remain rate-limit failover); web_disable drops vendors from the ring.
+  web_backend: keenable
+  web_disable: [firecrawl]
+  # Hermes sends no temperature/top_p/seed of its own. true: the bench profile
+  # sends this cell's sampling values (same as the frameworks); false: vLLM's
+  # model defaults, i.e. Hermes exactly as shipped. Part of config_id.
+  pin_sampling: true

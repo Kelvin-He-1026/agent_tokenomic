@@ -1,0 +1,47 @@
+# Custom OpenShell policy preset: Hermes's built-in keyless web backends only.
+#
+#   nemohermes gaia-hermes policy add --from-file configs/policies/hermes-keyless-web.yaml
+#
+# Hermes 0.21.3 with no web API key searches through Keenable and extracts
+# pages through Keenable, Exa's and Parallel's public endpoints. (It also tries
+# keyless Firecrawl first, which stays blocked; Hermes falls back past it.) These three hosts are
+# all its web toolset needs; pages themselves are fetched by those services,
+# not by the sandbox, so no general egress is opened. GAIA questions and the
+# URLs Hermes extracts are sent to these services.
+preset:
+  name: hermes-keyless-web
+  description: "Hermes keyless web search/extract backends (Keenable, Exa, Parallel)"
+
+network_policies:
+  hermes-keyless-web:
+    name: hermes-keyless-web
+    endpoints:
+      - host: api.keenable.ai
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow: { method: GET, path: "/v1/search/**" }
+          - allow: { method: POST, path: "/v1/search/**" }
+          # Keenable is also Hermes's first keyless page extractor.
+          - allow: { method: GET, path: "/v1/fetch/**" }
+          - allow: { method: POST, path: "/v1/fetch/**" }
+      - host: mcp.exa.ai
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow: { method: GET, path: "/mcp" }
+          - allow: { method: POST, path: "/mcp" }
+          - allow: { method: DELETE, path: "/mcp" }
+      - host: search.parallel.ai
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow: { method: GET, path: "/mcp" }
+          - allow: { method: POST, path: "/mcp" }
+          - allow: { method: DELETE, path: "/mcp" }
+    binaries:
+      # Hermes' exact venv Python, as in the built-in tavily preset.
+      - { path: /opt/hermes/.venv/bin/python }

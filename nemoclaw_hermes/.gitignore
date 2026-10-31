@@ -1,0 +1,10 @@
+# Generated results, which can be large and machine-specific.
+output/
+
+# Copy of the sandbox workspace: may hold credentials and session data.
+sandbox_backup_*/
+
+__pycache__/
+*.pyc
+*.log
+.env

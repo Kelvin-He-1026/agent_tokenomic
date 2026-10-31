@@ -1,0 +1,1612 @@
+[
+ {
+  "task_id": "gaia-cf106601-ab4f-4af9-b045-5295fe67b37d",
+  "question": "What country had the least number of athletes at the 1928 Summer Olympics? If there's a tie for a number of athletes, return the first in alphabetical order. Give the IOC country code as your answer.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "easy",
+  "gaia_level": 1,
+  "reference_answer": "CUB",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "CUB"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level1.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-3cef3a44-215e-4aed-8e3b-b1e3f08063b7",
+  "question": "I'm making a grocery list for my mom, but she's a professor of botany and she's a real stickler when it comes to categorizing things. I need to add different foods to different categories on the grocery list, but if I make a mistake, she won't buy anything inserted in the wrong category. Here's the list I have so far:\n\nmilk, eggs, flour, whole bean coffee, Oreos, sweet potatoes, fresh basil, plums, green beans, rice, corn, bell pepper, whole allspice, acorns, broccoli, celery, zucchini, lettuce, peanuts\n\nI need to make headings for the fruits and vegetables. Could you please create a list of just the vegetables from my list? If you could do that, then I can figure out how to categorize the rest of the list into the appropriate categories. But remember that my mom is a real stickler, so make sure that no botanical fruits end up on the vegetable list, or she won't get them when she's at the store. Please alphabetize the list of vegetables, and place each item in a comma separated list.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "easy",
+  "gaia_level": 1,
+  "reference_answer": "broccoli, celery, fresh basil, lettuce, sweet potatoes",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "broccoli, celery, fresh basil, lettuce, sweet potatoes"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level1.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-bda648d7-d618-4883-88f4-3466eabd860e",
+  "question": "Where were the Vietnamese specimens described by Kuznetzov in Nedoshivina's 2010 paper eventually deposited? Just give me the city name without abbreviations.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "easy",
+  "gaia_level": 1,
+  "reference_answer": "Saint Petersburg",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "Saint Petersburg"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level1.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-dc22a632-937f-4e6a-b72f-ba0ff3f5ff97",
+  "question": "What was the complete title of the book in which two James Beard Award winners recommended the restaurant where Ali Khan enjoyed a New Mexican staple in his cost-conscious TV show that started in 2015? Write the numbers in plain text if there are some in the title.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "easy",
+  "gaia_level": 1,
+  "reference_answer": "Five Hundred Things To Eat Before It's Too Late: and the Very Best Places to Eat Them",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "Five Hundred Things To Eat Before It's Too Late: and the Very Best Places to Eat Them"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level1.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-6f37996b-2ac7-44b0-8e68-6d28256631b4",
+  "question": "Given this table defining * on the set S = {a, b, c, d, e}\n\n|*|a|b|c|d|e|\n|---|---|---|---|---|---|\n|a|a|b|c|b|d|\n|b|b|c|a|e|c|\n|c|c|a|b|b|a|\n|d|b|e|b|e|d|\n|e|d|b|a|d|c|\n\nprovide the subset of S involved in any possible counter-examples that prove * is not commutative. Provide your answer as a comma separated list of the elements in the set in alphabetical order.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "easy",
+  "gaia_level": 1,
+  "reference_answer": "b, e",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "b, e"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level1.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-72e110e7-464c-453c-a309-90a95aed6538",
+  "question": "Under DDC 633 on Bielefeld University Library's BASE, as of 2020, from what country was the unknown language article with a flag unique from the others?",
+  "task_type": "gaia_agent_task",
+  "difficulty": "easy",
+  "gaia_level": 1,
+  "reference_answer": "Guatemala",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "Guatemala"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level1.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-5d0080cb-90d7-4712-bc33-848150e917d3",
+  "question": "What was the volume in m^3 of the fish bag that was calculated in the University of Leicester paper \"Can Hiccup Supply Enough Fish to Maintain a Dragon’s Diet?\"",
+  "task_type": "gaia_agent_task",
+  "difficulty": "easy",
+  "gaia_level": 1,
+  "reference_answer": "0.1777",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "0.1777"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level1.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-5a0c1adf-205e-4841-a666-7c3ef95def9d",
+  "question": "What is the first name of the only Malko Competition recipient from the 20th Century (after 1977) whose nationality on record is a country that no longer exists?",
+  "task_type": "gaia_agent_task",
+  "difficulty": "easy",
+  "gaia_level": 1,
+  "reference_answer": "Claus",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "Claus"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level1.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-d0633230-7067-47a9-9dbf-ee11e0a2cdd6",
+  "question": "In the Scikit-Learn July 2017 changelog, what other predictor base command received a bug fix? Just give the name, not a path.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "easy",
+  "gaia_level": 1,
+  "reference_answer": "BaseLabelPropagation",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "BaseLabelPropagation"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level1.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-46719c30-f4c3-4cad-be07-d5cb21eee6bb",
+  "question": "Of the authors (First M. Last) that worked on the paper \"Pie Menus or Linear Menus, Which Is Better?\" in 2015, what was the title of the first paper authored by the one that had authored prior papers?",
+  "task_type": "gaia_agent_task",
+  "difficulty": "easy",
+  "gaia_level": 1,
+  "reference_answer": "Mapping Human Oriented Information to Software Agents for Online Systems Usage",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "Mapping Human Oriented Information to Software Agents for Online Systems Usage"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level1.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-33d8ea3b-6c6b-4ff1-803d-7e270dea8a57",
+  "question": "What is the minimum number of page links a person must click on to go from the english Wikipedia page on The Lord of the Rings (the book) to the english Wikipedia page on A Song of Ice and Fire (the book series)? In your count, include each link you would click on to get to the page. Use the pages as they appeared at the end of the day on July 3, 2023.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "medium",
+  "gaia_level": 2,
+  "reference_answer": "2",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "2"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level2.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-e4e91f1c-1dcd-439e-9fdd-cb976f5293fd",
+  "question": "I need to fact-check a citation. This is the citation from the bibliography:\n\nGreetham, David. \"Uncoupled: OR, How I Lost My Author(s).\" Textual Cultures: Texts, Contexts, Interpretation, vol. 3 no. 1, 2008, p. 45-46. Project MUSE, doi:10.2979/tex.2008.3.1.44.\n\nAnd this is the in-line citation:\n\nOur relationship with the authors of the works we read can often be “obscured not by a \"cloak of print\" but by the veil of scribal confusion and mis-transmission” (Greetham 45-46).\n\nDoes the quoted text match what is actually in the article? If Yes, answer Yes, otherwise, give me the word in my citation that does not match with the correct one (without any article).",
+  "task_type": "gaia_agent_task",
+  "difficulty": "medium",
+  "gaia_level": 2,
+  "reference_answer": "cloak",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "cloak"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level2.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-ecbc4f94-95a3-4cc7-b255-6741a458a625",
+  "question": "How many images are there in the latest 2022 Lego english wikipedia article?",
+  "task_type": "gaia_agent_task",
+  "difficulty": "medium",
+  "gaia_level": 2,
+  "reference_answer": "13",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "13"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level2.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-67e8878b-5cef-4375-804e-e6291fdbe78a",
+  "question": "The attached PDF lists accommodations in the resort community of Seahorse Island. Which type of accommodation has a higher average rating in Seahorse Island?",
+  "task_type": "gaia_agent_task",
+  "difficulty": "medium",
+  "gaia_level": 2,
+  "reference_answer": "Hotels",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "Hotels"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level2.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": true,
+  "file_name": "67e8878b-5cef-4375-804e-e6291fdbe78a.pdf",
+  "file_path": "GAIA_stack/documents/67e8878b-5cef-4375-804e-e6291fdbe78a.pdf",
+  "notes": "Attachment in GAIA_stack/documents/, opened with the read_file tool.",
+  "answer_format": "gaia_final_answer",
+  "attachment_readable": true
+ },
+ {
+  "task_id": "gaia-0a3cd321-3e76-4622-911b-0fda2e5d6b1a",
+  "question": "According to the World Bank, which countries had gross savings of over 35% of GDP for every year in the period 2001-2010? Give your answer as a comma-separated list of countries in alphabetical order. Use the countries most common names in english when answering.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "medium",
+  "gaia_level": 2,
+  "reference_answer": "Brunei, China, Morocco, Singapore",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "Brunei, China, Morocco, Singapore"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level2.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-e9a2c537-8232-4c3f-85b0-b52de6bcba99",
+  "question": "The attached file shows a list of books in the collection of Scribe County Public Library. How many of the library’s books that are authored by Rick Riordan are not currently on the library’s shelves?",
+  "task_type": "gaia_agent_task",
+  "difficulty": "medium",
+  "gaia_level": 2,
+  "reference_answer": "7",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "7"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level2.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": true,
+  "file_name": "e9a2c537-8232-4c3f-85b0-b52de6bcba99.pdf",
+  "file_path": "GAIA_stack/documents/e9a2c537-8232-4c3f-85b0-b52de6bcba99.pdf",
+  "notes": "Attachment in GAIA_stack/documents/, opened with the read_file tool.",
+  "answer_format": "gaia_final_answer",
+  "attachment_readable": true
+ },
+ {
+  "task_id": "gaia-dd3c7503-f62a-4bd0-9f67-1b63b94194cc",
+  "question": "Use density measures from the chemistry materials licensed by Marisa Alviar-Agnew & Henry Agnew under the CK-12 license in LibreText's Introductory Chemistry materials as compiled 08/21/2023.\n\nI have a gallon of honey and a gallon of mayonnaise at 25C. I remove one cup of honey at a time from the gallon of honey. How many times will I need to remove a cup to have the honey weigh less than the mayonaise? Assume the containers themselves weigh the same.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "medium",
+  "gaia_level": 2,
+  "reference_answer": "6",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "6"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level2.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-ad37a656-079a-49f9-a493-7b739c9167d1",
+  "question": "On July 15, 2008, Phys.org published an article about a catastrophe. Find the explosive force of this catastrophe according to Encyclopedia Britannica, then find the name of the US nuclear test that had the same yield. Your answer should only be the last word of the name of the test.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "medium",
+  "gaia_level": 2,
+  "reference_answer": "Bravo",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "Bravo"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level2.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-d5141ca5-e7a0-469f-bf3e-e773507c86e2",
+  "question": "When was a picture of St. Thomas Aquinas first added to the Wikipedia page on the Principle of double effect? Answer using the format DD/MM/YYYY.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "medium",
+  "gaia_level": 2,
+  "reference_answer": "19/02/2009",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "19/02/2009"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level2.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-7619a514-5fa8-43ef-9143-83b66a43d7a4",
+  "question": "According to github, when was Regression added to the oldest closed numpy.polynomial issue that has the Regression label in MM/DD/YY?",
+  "task_type": "gaia_agent_task",
+  "difficulty": "medium",
+  "gaia_level": 2,
+  "reference_answer": "04/15/18",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "04/15/18"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level2.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-c526d8d6-5987-4da9-b24c-83466fa172f3",
+  "question": "In the NIH translation of the original 1913 Michaelis-Menten Paper, what is the velocity of a reaction to four decimal places using the final equation in the paper based on the information for Reaction 7 in the Excel file?",
+  "task_type": "gaia_agent_task",
+  "difficulty": "hard",
+  "gaia_level": 3,
+  "reference_answer": "0.0424",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "0.0424"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level3.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": true,
+  "file_name": "c526d8d6-5987-4da9-b24c-83466fa172f3.xlsx",
+  "file_path": "GAIA_stack/documents/c526d8d6-5987-4da9-b24c-83466fa172f3.xlsx",
+  "notes": "Attachment in GAIA_stack/documents/, opened with the read_file tool.",
+  "answer_format": "gaia_final_answer",
+  "attachment_readable": true
+ },
+ {
+  "task_id": "gaia-384d0dd8-e8a4-4cfe-963c-d37f256e7662",
+  "question": "In the NCATS PubChem compound database for Food Additive Status classification, find the compound that has a molecular weight of 100 g/mol or less, 6 heavy atoms, 1 or fewer hydrogen bond acceptors, and a complexity between 10 and 15. Of the shared gene-chemical co-occurrences between its two possible enzyme transformations, what is the PubChem CID of the heaviest by molecular weight?",
+  "task_type": "gaia_agent_task",
+  "difficulty": "hard",
+  "gaia_level": 3,
+  "reference_answer": "4192",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "4192"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level3.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-9b54f9d9-35ee-4a14-b62f-d130ea00317f",
+  "question": "Which of the text elements under CATEGORIES in the XML would contain the one food in the spreadsheet that does not appear a second time under a different name?",
+  "task_type": "gaia_agent_task",
+  "difficulty": "hard",
+  "gaia_level": 3,
+  "reference_answer": "Soups and Stews",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "Soups and Stews"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level3.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": true,
+  "file_name": "9b54f9d9-35ee-4a14-b62f-d130ea00317f.zip",
+  "file_path": "GAIA_stack/documents/9b54f9d9-35ee-4a14-b62f-d130ea00317f.zip",
+  "notes": "Attachment in GAIA_stack/documents/, opened with the read_file tool.",
+  "answer_format": "gaia_final_answer",
+  "attachment_readable": true
+ },
+ {
+  "task_id": "gaia-00d579ea-0889-4fd9-a771-2c8d79835c8d",
+  "question": "Assuming scientists in the famous youtube video The Thinking Machine (Artificial Intelligence in the 1960s) were interviewed the same year, what is the name of the scientist predicting the sooner thinking machines or robots? Answer using the format First name Last name",
+  "task_type": "gaia_agent_task",
+  "difficulty": "hard",
+  "gaia_level": 3,
+  "reference_answer": "Claude Shannon",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "Claude Shannon"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level3.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-3da89939-209c-4086-8520-7eb734e6b4ef",
+  "question": "I was referencing each of the tables in the file from papers that were cited by the \"Trans fatty acid contents in chocolates and chocolate wafers in Turkey\" paper. I lost my own reference sheet and need to know which of the papers each table came from. The file may not use the full table caption. If the references in the\"Trans fatty acid\" paper bibliography were numbered starting with 1, give me the numbers in the order that they would be used to fill the cells in the Excel file from top to bottom, as a comma separated list.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "hard",
+  "gaia_level": 3,
+  "reference_answer": "8, 29, 22, 1, 8, 26",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "8, 29, 22, 1, 8, 26"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level3.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": true,
+  "file_name": "3da89939-209c-4086-8520-7eb734e6b4ef.xlsx",
+  "file_path": "GAIA_stack/documents/3da89939-209c-4086-8520-7eb734e6b4ef.xlsx",
+  "notes": "Attachment in GAIA_stack/documents/, opened with the read_file tool.",
+  "answer_format": "gaia_final_answer",
+  "attachment_readable": true
+ },
+ {
+  "task_id": "gaia-5f982798-16b9-4051-ab57-cfc7ebdb2a91",
+  "question": "I read a paper about multiwavelength observations of fast radio bursts back in March 2021 on Arxiv, and it had a fascinating diagram of an X-ray time profile. There was a similar burst-1 diagram in another paper from one of the same authors about fast radio bursts back in July 2020, but I can't recall what the difference in seconds in the measured time span was. How many more seconds did one measure than the other? Just give the number.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "hard",
+  "gaia_level": 3,
+  "reference_answer": "0.2",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "0.2"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level3.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-676e5e31-a554-4acc-9286-b60d90a92d26",
+  "question": "In July 2, 1959 United States standards for grades of processed fruits, vegetables, and certain other products listed as dehydrated, consider the items in the \"dried and dehydrated section\" specifically marked as dehydrated along with any items in the Frozen/Chilled section that contain the whole name of the item, but not if they're marked Chilled. As of August 2023, what is the percentage (to the nearest percent) of those standards that have been superseded by a new version since the date given in the 1959 standards?",
+  "task_type": "gaia_agent_task",
+  "difficulty": "hard",
+  "gaia_level": 3,
+  "reference_answer": "86",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "86"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level3.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-872bfbb1-9ccf-49f6-8c5f-aa22818ccd66",
+  "question": "Which of the fruits shown in the 2008 painting \"Embroidery from Uzbekistan\" were served as part of the October 1949 breakfast menu for the ocean liner that was later used as a floating prop for the film \"The Last Voyage\"? Give the items as a comma-separated list, ordering them in clockwise order based on their arrangement in the painting starting from the 12 o'clock position. Use the plural form of each fruit.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "hard",
+  "gaia_level": 3,
+  "reference_answer": "pears, bananas",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "pears, bananas"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level3.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-ad2b4d70-9314-4fe6-bfbe-894a45f6055f",
+  "question": "Eva Draconis has a personal website which can be accessed on her YouTube page. What is the meaning of the only symbol seen in the top banner that has a curved line that isn't a circle or a portion of a circle? Answer without punctuation.",
+  "task_type": "gaia_agent_task",
+  "difficulty": "hard",
+  "gaia_level": 3,
+  "reference_answer": "War is not here this is a land of peace",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "War is not here this is a land of peace"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level3.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ },
+ {
+  "task_id": "gaia-50f58759-7bd6-406f-9b0d-5692beb2a926",
+  "question": "How many times was a Twitter/X post cited as a reference on the english Wikipedia pages for each day of August in the last June 2023 versions of the pages?",
+  "task_type": "gaia_agent_task",
+  "difficulty": "hard",
+  "gaia_level": 3,
+  "reference_answer": "3",
+  "reference_context": "",
+  "answer_check": {
+   "mode": "gaia_exact",
+   "params": {
+    "answer": "3"
+   }
+  },
+  "grading_rubric": [
+   "Compare the response with the official GAIA reference answer; accept equivalent wording.",
+   "Require all parts requested by the question and reject unsupported or contradictory claims."
+  ],
+  "acceptable_tool_sets": [
+   [],
+   [
+    "web_search"
+   ],
+   [
+    "fetch_url"
+   ],
+   [
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url"
+   ],
+   [
+    "web_search",
+    "read_file"
+   ],
+   [
+    "fetch_url",
+    "read_file"
+   ],
+   [
+    "web_search",
+    "fetch_url",
+    "read_file"
+   ]
+  ],
+  "source": "gaia-benchmark/GAIA:2023/validation/metadata.level3.parquet",
+  "source_revision": "682dd723ee1e1697e00360edccf2366dc8418dd9",
+  "source_split": "2023/validation",
+  "requires_attachment": false,
+  "answer_format": "gaia_final_answer"
+ }
+]
