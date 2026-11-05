@@ -19,7 +19,7 @@
   "sandbox": "gaia-hermes",
   "hermes_version": "Hermes Agent v0.21.3 (2026.9.14)",
   "bench_profile": "bench",
-  "bench_profile_config_sha16": "f0d3d40f74807bb2",
+  "bench_profile_config_sha16": "93ac54a1d4c1afbf",
   "policy_presets": [
     "brew-balanced [user-added]",
     "huggingface [user-added]",
@@ -27,5 +27,5 @@
     "pypi [user-added]",
     "hermes-keyless-web [user-added]"
   ],
-  "written_at": "2026-10-30T12:55:54"
+  "written_at": "2026-11-04T03:50:52"
 }
