@@ -1,0 +1,6 @@
+.venv/
+.docker/
+data/
+output/
+__pycache__/
+*.pyc

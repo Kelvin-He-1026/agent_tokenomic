@@ -46,11 +46,17 @@ output/runs/ telemetry per cell: config/run/llm_call/tool_call/eval + blobs/
 scripts/     start_stack.sh, stop_stack.sh, fetch_models.py, serve_vllm.sh,
              build_index.py, record_fixtures.py, parity_check.py
 GAIA_stack/  the GAIA task set: config, fetch/prepare scripts, sweep driver
+terminal_bench/  pinned Terminal-Bench CPU-only 4.1 integration, isolated Harbor,
+                 project ReAct terminal adapter, oracle checks and result export
 ```
 
 Each runtime gets its own folder (`langGraph/`, `openai_agents/`, `crewAI/`),
 with one file per architecture inside it. `adapters/` holds only
 what is runtime-neutral.
+
+For terminal tasks and CPU/GPU resource experiments, see
+[terminal_bench/README.md](terminal_bench/README.md). It has a separate Python
+environment and output tree; the existing Phase 1 and GAIA runners are unchanged.
 
 ## Models are local
 

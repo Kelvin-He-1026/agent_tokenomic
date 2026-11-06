@@ -1,0 +1,5 @@
+# Isolated from the serving environment; Python >=3.12.
+harbor==0.25.0
+langgraph==1.2.14
+langchain-openai==1.7.1
+langchain-core==1.6.10

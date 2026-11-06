@@ -1,0 +1,16 @@
+{
+  "dataset": "terminal-bench/terminal-bench-cpu",
+  "version": "4.1.0",
+  "upstream": "https://github.com/harbor-framework/terminal-bench/tree/v4.1.0",
+  "selection_note": "Candidate sets selected before model results. Names and CPU-only resource declarations were checked against the pinned task.toml files. These are not official difficulty levels or measured hardware bottleneck labels. Validate oracle runs and profile before committing a study cohort.",
+  "smoke": [
+    "html-js-filter", "interleaved-vigenere", "legacy-utility-triage",
+    "data-anonymization", "risk-scorer-replay"
+  ],
+  "pilot": [
+    "html-js-filter", "interleaved-vigenere", "legacy-utility-triage",
+    "data-anonymization", "risk-scorer-replay", "ks-solver-cpp",
+    "vf2-speedup-networkx", "session-window-debug", "wal-recovery-ordering",
+    "ontology-kg-querying", "production-planning", "sound-change-cascade"
+  ]
+}
