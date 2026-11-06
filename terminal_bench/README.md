@@ -16,8 +16,12 @@ CPU-only 指任务环境不需要 GPU；Qwen 推理仍使用 GPU。GAIA 与本�
 | `budget_proxy.py` | 每个 trial 独立的调用/输出预算、原始请求和响应记录 |
 | `export_results.py` | 原始 verifier 结果、终止状态及缺失 trial 的 CSV 导出 |
 | `preflight.py` | 依赖、Docker、模型服务的只读检查 |
+| `nemoclaw_agent.py` | NemoClaw 沙箱内原生 Hermes 的 Harbor 适配（`--agent nemoclaw-hermes`） |
+| `ssh_relay.py`、`relay/relay_exec.sh` | 每个 trial 独立的 SSH 中继：只把命令转进该 trial 的任务容器 |
+| `configs/nemoclaw_hermes.yaml` | NemoClaw Hermes 配置：与 GAIA Hermes 相同的模型路由和 thinking，Terminal-Bench 预算 |
+| `configs/policies/terminal-bench-relay.yaml` | 沙箱新增的唯一出站规则：socat → 172.18.0.1:2222 |
 | `fixtures/terminal-smoke/` | 本地诊断任务，不计入 Terminal-Bench 成绩 |
-| `tests/` | 无需 Docker/GPU/外部模型的集成测试 |
+| `tests/` | 集成测试；中继测试需要 Docker、sshd 和本地 busybox 镜像，否则跳过 |
 
 `data/`、`output/` 和本目录的 `.venv/` 被忽略，不提交任务内容和运行轨迹。
 正式任务由 Harbor 在执行时下载，容器镜像沿用官方任务定义。解析后的数据集引用
@@ -176,29 +180,55 @@ NUMA、内存、线程数和主机上其他负载。修改 quota 后的结果须
 该采样覆盖整机/设备，应独占资源或记录其他负载。不要把它归因到重叠运行的单一 trial。
 本目录未把进程 CPU、GPU 能量或美元成本伪装成已测指标。
 
-## 6. Hermes 与 NemoClaw 的边界
+## 6. NemoClaw Hermes（`--agent nemoclaw-hermes`）
 
-提供 `--agent hermes-native` 配置入口，固定已核对存在的 Hermes tag `v2026.9.24`，在 **Harbor 任务环境**
-安装和运行原生 Hermes。必须显式给 `--container-base-url`，因为容器里的 localhost
-不是宿主机。只应使用明确可达且获准访问的私有 bridge 地址；Docker/OpenShell 的
-`host.*.internal` 别名不保证在另一个运行环境存在。
+Hermes 按原样运行在 NemoClaw 沙箱 `gaia-hermes` 内，与 GAIA 的 Hermes 组相同：同一 bench
+profile 快照（每个 trial 恢复一份新的 `tb` 副本）、同一模型路由（沙箱记录的
+`host.openshell.internal:8000` = 172.18.0.1:8000 日志代理 → 127.0.0.1:8002 vLLM，
+`nemoclaw_hermes/configs/gaia_hermes_qwen_tp2_think_low.yaml`，thinking on / low）。
+代理用 X-Run-Id 把调用绑定到 trial，并强制 200 次调用、16,384 tokens/次、262,144 tokens/trial、
+1 小时；`agent.max_turns` 设为 199。
 
-```bash
-# 仅预览；先验证实际 task 容器到该地址的网络，再执行。
-terminal_bench/.venv/bin/python terminal_bench/run.py \
-  --agent hermes-native --task html-js-filter --attempts 1 \
-  --container-base-url http://<private-bridge-ip>:18000/v1
+不同之处只有工具执行的位置。profile 副本把 `terminal.backend` 改为 `ssh`，指向每个 trial 的中继：
+
+```text
+沙箱 hermes → ssh (ControlMaster) → socat → OpenShell 出站代理（terminal-bench-relay 规则）
+  → 172.18.0.1:2222 中继 sshd（本用户、每 trial 新密钥）
+  → relay_exec.sh → docker exec -i <任务容器> sh -c <命令>
 ```
 
-**它不经过现有 NemoClaw/OpenShell 沙箱，也不测量其开销。** 原生 Hermes 的 max_turns
-不等于代理强制的调用/输出预算，其计划会标记 `budget_enforced=false`。本地 cost/质量
-结果不得直接宣称与 ReAct 预算公平；应先接同等 per-trial 代理、固定 sampling 和内部调用
-统计，再开展正式双 agent 比较。`max_turns` 不限制所有辅助调用。要测试 NemoClaw，后续
-需要让其工具操作 Harbor 的实际任务环境并保留隔离/策略边界，不能只复制题目到现有沙箱。
+Hermes 的文件工具也走同一 backend，所以读写、patch 都发生在任务容器里，再由 Harbor verifier 评分。
+中继复刻 Harbor `environment.exec` 的 workdir、env 和 user；禁止 shell、sftp、端口/agent/X11
+转发和 PTY；trial 结束即停止。沙箱没有 Docker 权限，任务容器也没有到沙箱的网络。
+Hermes 的 SSH backend 会把 profile 的 skills（约 4 MB）同步到任务容器的 `~/.hermes`；
+被超时打断的命令可能仍在任务容器中运行，与 Harbor 自身 exec 超时相同。
 
-本次验证覆盖独立依赖、固定数据集元数据解析、配置预览、mock 模型的完整 ReAct 工具循环、
-预算和导出；另已完成本地 Docker oracle/verifier 诊断任务，1/1 通过。真实 Qwen、官方任务
-与原生 Hermes 尚未运行，不能把本地诊断当作这些正式任务的成绩。
+一次性准备（沙箱策略变更，需要授权）：
+
+```bash
+nemohermes gaia-hermes policy add --from-file terminal_bench/configs/policies/terminal-bench-relay.yaml --yes
+# stack h：vLLM 8002（think low）和 172.18.0.1:8000 日志代理
+ATK_STACK=h nohup scripts/serve_vllm.sh --config nemoclaw_hermes/configs/gaia_hermes_qwen_tp2_think_low.yaml &
+ATK_STACK=h scripts/start_stack.sh
+```
+
+```bash
+# 本地诊断任务
+terminal_bench/.venv/bin/python terminal_bench/run.py --agent nemoclaw-hermes \
+  --local-tasks terminal_bench/fixtures --task terminal-smoke --attempts 1 --execute
+# 正式候选试验：12 题 × 3 次，并发固定为 1（一个 profile 实例、一个中继端口）
+terminal_bench/.venv/bin/python terminal_bench/run.py --agent nemoclaw-hermes --suite pilot --attempts 3 --execute
+```
+
+每个 trial 的 `agent/` 目录：`hermes_stdout.txt`、`usage.json`、`spans.jsonl`（bench-spans 工具计时）、
+`proxy/llm_call.jsonl`（代理记录的每次模型调用）、`relay/relay_calls.jsonl` 与 `relay/cmds/`
+（任务容器执行的每条命令）、`accounting.json`（completion_type、预算、计时）。
+
+### 原生 Hermes（`--agent hermes-native`，不经过 NemoClaw）
+
+Harbor 在任务容器内安装原生 Hermes（tag `v2026.9.24`），必须显式给 `--container-base-url`。
+**它不经过 NemoClaw/OpenShell 沙箱，也不测量其开销**；max_turns 不等于代理强制的预算，
+计划会标记 `budget_enforced=false`。尚未运行。
 
 ## 离线检查
 

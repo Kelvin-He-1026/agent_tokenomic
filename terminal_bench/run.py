@@ -41,7 +41,7 @@ def local_endpoint(url):
 
 def make_parser():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--agent', choices=['oracle', 'react', 'hermes-native'], default='oracle')
+    parser.add_argument('--agent', choices=['oracle', 'react', 'nemoclaw-hermes', 'hermes-native'], default='oracle')
     parser.add_argument('--suite', choices=['smoke', 'pilot'], default='smoke')
     parser.add_argument('--task', action='append', help='Exact task name; repeat to replace the named suite')
     parser.add_argument('--attempts', type=int, help='Default: oracle=5, agents=3')
@@ -49,7 +49,7 @@ def make_parser():
     parser.add_argument('--task-cpus', type=float, help='Task container CPU quota; not host/vLLM CPU allocation')
     parser.add_argument('--memory-mb', type=int)
     parser.add_argument('--agent-timeout', type=float, help='Research override; default from cell config for ReAct, task default for oracle/native Hermes')
-    parser.add_argument('--cell-config', type=Path, default=TB / 'configs/qwen_tp2.yaml')
+    parser.add_argument('--cell-config', type=Path, help='Default: configs/nemoclaw_hermes.yaml for nemoclaw-hermes, else configs/qwen_tp2.yaml')
     parser.add_argument('--base-url', help='Host-reachable local Qwen URL; overrides cell config for ReAct')
     parser.add_argument('--container-base-url', help='For native Hermes: explicitly supply a task-container-reachable model endpoint')
     parser.add_argument('--hermes-version', default='v2026.9.24', help='Verified upstream Hermes tag, not a NemoClaw image version')
@@ -85,10 +85,17 @@ def build_job(args):
         environment['override_cpus'] = args.task_cpus
     if args.memory_mb is not None:
         environment['override_memory_mb'] = args.memory_mb
-    cfg = RunConfig.from_yaml(args.cell_config)
+    if args.agent == 'nemoclaw-hermes' and args.concurrency != 1:
+        raise ValueError('nemoclaw-hermes runs one trial at a time: one sandbox profile instance and one relay port')
+    cell_config = args.cell_config or TB / ('configs/nemoclaw_hermes.yaml' if args.agent == 'nemoclaw-hermes'
+                                            else 'configs/qwen_tp2.yaml')
+    cfg = RunConfig.from_yaml(cell_config)
     endpoint = local_endpoint(args.base_url or cfg.base_url)
     cell = cfg.to_dict()
     cell['base_url'] = endpoint
+    if cfg.hermes:
+        # to_dict() leaves provenance fields out; the adapter needs this block.
+        cell['hermes'] = dict(cfg.hermes)
     if cell.get('api_key') != 'EMPTY':
         raise ValueError('Keep api_key: EMPTY in committed config; use TB_API_KEY environment variable')
     if args.agent_timeout is not None:
@@ -97,6 +104,11 @@ def build_job(args):
     generated_cell = TB / 'output/plans' / f'{name}.cell.json'
     if args.agent == 'react':
         agent = {'import_path':'terminal_bench.agents:ProjectReActAgent',
+                 'model_name':cfg.model.served_name,
+                 'override_timeout_sec':cell['limits']['task_timeout_s'],
+                 'kwargs':{'cell_config':str(generated_cell)}}
+    elif args.agent == 'nemoclaw-hermes':
+        agent = {'import_path':'terminal_bench.nemoclaw_agent:NemoClawHermesAgent',
                  'model_name':cfg.model.served_name,
                  'override_timeout_sec':cell['limits']['task_timeout_s'],
                  'kwargs':{'cell_config':str(generated_cell)}}
@@ -149,7 +161,7 @@ def build_job(args):
             'agent':args.agent,'n_concurrent_trials':args.concurrency,
             'task_cpus':args.task_cpus,'memory_mb':args.memory_mb,
             'study_protocol':'local-resource-study; not official leaderboard parity',
-            'budget_enforced':args.agent == 'react',
+            'budget_enforced':args.agent in ('react', 'nemoclaw-hermes'),
             'native_hermes_note':'Harbor installed Hermes; NOT NemoClaw/OpenShell. max_turns is not a proxy-enforced call/token budget.' if args.agent == 'hermes-native' else '',
             'harbor_version':version('harbor'),
             'cell_sha256':hashlib.sha256(json.dumps(cell,sort_keys=True).encode()).hexdigest(),
@@ -189,6 +201,13 @@ def main(argv=None):
             ids = {r['id'] for r in response.json().get('data',[])}
         if cell['model']['served_name'] not in ids:
             raise SystemExit('Expected Qwen served_name not found at local endpoint')
+    if args.agent == 'nemoclaw-hermes':
+        sandbox = cell['hermes']['sandbox']
+        policy = subprocess.run(['openshell','policy','get',sandbox,'--full'],capture_output=True,text=True,
+                                timeout=60,stdin=subprocess.DEVNULL)
+        if 'terminal-bench-relay' not in policy.stdout:
+            raise SystemExit(f'Sandbox {sandbox} lacks the relay egress rule: nemohermes {sandbox} policy add '
+                             '--from-file terminal_bench/configs/policies/terminal-bench-relay.yaml --yes')
     from harbor.job import Job
 
     async def execute():

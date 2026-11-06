@@ -1,0 +1,56 @@
+# Terminal-Bench cell for NemoClaw Hermes (terminal_bench/nemoclaw_agent.py).
+#
+# Hermes runs as shipped inside the NemoClaw sandbox (gaia-hermes), exactly as
+# in the GAIA arm: same bench profile snapshot, same model route
+# (host.openshell.internal:8000 = the logging proxy on 172.18.0.1:8000, then
+# vLLM on 127.0.0.1:8002 serving
+# nemoclaw_hermes/configs/gaia_hermes_qwen_tp2_think_low.yaml), same thinking
+# mode (on, effort low, pinned server-side). What changes for Terminal-Bench:
+#
+#   - its terminal and file tools run in the Harbor task container, over
+#     Hermes's SSH backend and the per-trial relay (terminal_bench/ssh_relay.py);
+#   - toolsets terminal,file (no web: the tasks are offline);
+#   - the research budget of the ReAct cell (configs/qwen_tp2.yaml): 200 model
+#     calls, 16,384 output tokens per call, 262,144 per trial, 1 h. The proxy
+#     enforces all four; agent.max_turns is one below the call cap so Hermes's
+#     own last call fits inside it.
+framework: hermes
+as_of_date: '2026-04-06'
+base_url: http://172.18.0.1:8000/v1
+api_key: EMPTY
+model:
+  repo: Qwen/Qwen3.8-27B
+  local_dir: Qwen3.8-27B
+  revision: main
+  served_name: Qwen/Qwen3.8-27B
+  precision: bf16
+  tp_size: 2
+  max_model_len: 131072
+  gpu_memory_utilization: 0.9
+  tool_call_parser: qwen3_xml
+  reasoning_parser: qwen3
+  thinking_setting: 'on'
+  reasoning_effort: low
+sampling:
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 16384
+  seed: 1234
+  stream: true
+limits:
+  max_llm_calls: 200
+  max_total_output_tokens: 262144
+  request_timeout_s: 300
+  task_timeout_s: 3600
+  client_retries: 0
+  parallel_tool_calls: false
+hermes:
+  sandbox: gaia-hermes
+  profile: bench          # restored from the setup_sandbox.sh snapshot before every trial
+  instance: tb            # the restored copy's profile name (GAIA uses bench / bench-sN)
+  toolsets: terminal,file
+  max_turns: 199
+  yolo: true              # commands run in the throwaway task container, not the sandbox
+  workdir: /sandbox       # where hermes itself starts inside the sandbox
+  relay_host: 172.18.0.1  # host.openshell.internal, as seen from the sandbox
+  relay_port: 2222        # the only port terminal-bench-relay.yaml opens

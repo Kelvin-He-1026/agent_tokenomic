@@ -1,0 +1,27 @@
+# OpenShell policy preset: the NemoClaw Hermes arm of Terminal-Bench.
+#
+#   nemohermes gaia-hermes policy add --from-file terminal_bench/configs/policies/terminal-bench-relay.yaml --yes
+#
+# Hermes's terminal and file tools run over its SSH backend to the per-trial
+# relay (terminal_bench/ssh_relay.py): an sshd on the host's Docker bridge
+# address whose only command is "run this in the trial's task container".
+# The ssh client reaches it through the sandbox's egress proxy with socat
+# (ProxyCommand in the sandbox's ~/.ssh/config), so socat is the only binary
+# allowed, to this one address and port. The relay accepts only the fresh key
+# the harness puts in the sandbox for each trial and is down between trials.
+preset:
+  name: terminal-bench-relay
+  description: "SSH to the per-trial Terminal-Bench task relay on the host bridge (172.18.0.1:2222)"
+
+network_policies:
+  terminal-bench-relay:
+    name: terminal-bench-relay
+    endpoints:
+      - host: host.openshell.internal
+        port: 2222
+        access: full
+        tls: skip
+        allowed_ips:
+          - '172.18.0.1/32'
+    binaries:
+      - { path: /usr/bin/socat }
