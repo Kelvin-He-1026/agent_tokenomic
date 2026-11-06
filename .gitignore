@@ -15,10 +15,9 @@ venv/
 model/
 
 # Chroma index. Rebuild with scripts/build_index.py.
-db/
+
 
 # Third-party papers. Not redistributed; see README for sources.
-documents/
 
 # Generated results. Runs are machine-specific and include superseded data;
 # publish curated results deliberately rather than committing everything.
