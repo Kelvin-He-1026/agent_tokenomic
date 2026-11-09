@@ -309,8 +309,40 @@ async def _forward(path: str, request: Request, run_id: str):
 
     started = monotonic_ms()
     if payload.get("stream"):
+        # Open the upstream response before answering, so an upstream error (for
+        # example vLLM's 400 when prompt + output cap exceed the context) reaches
+        # the agent with its status and message. Passed through as a 200 event
+        # stream it reads as an empty reply, which Hermes cannot classify: it
+        # retries blindly instead of compressing its context.
+        try:
+            resp = await client.send(
+                client.build_request("POST", f"{UPSTREAM}/v1/chat/completions", content=body, headers=headers),
+                stream=True,
+            )
+        except Exception as exc:
+            call.error = f"{type(exc).__name__}: {exc}"
+            call.usage_missing = True
+            call.latency_ms = monotonic_ms() - started
+            _finish(call, {}, run, writer)
+            raise
+        if resp.is_error:
+            call.http_status = resp.status_code
+            call.error = f"upstream HTTP {resp.status_code}"
+            data: dict[str, Any] = {}
+            try:
+                raw = await resp.aread()
+                try:
+                    data = json.loads(raw) if raw else {}
+                except json.JSONDecodeError:
+                    data = {"error": {"message": raw.decode(errors="replace")[:2000]}}
+            finally:
+                await resp.aclose()
+                call.latency_ms = monotonic_ms() - started
+                _describe_response(call, data)
+                _finish(call, data, run, writer)
+            return JSONResponse(status_code=resp.status_code, content=data)
         return StreamingResponse(
-            _stream(call, started, body, headers, run, writer),
+            _stream(call, started, resp, run, writer),
             media_type="text/event-stream",
         )
 
@@ -335,38 +367,33 @@ async def _forward(path: str, request: Request, run_id: str):
 async def _stream(
     call: LlmCallRecord,
     started: float,
-    body: bytes,
-    headers: dict,
+    resp: httpx.Response,
     run: RunState,
     writer: TelemetryWriter,
 ):
-    """Pass SSE chunks through untouched while timestamping the first one."""
+    """Pass SSE chunks of an opened, successful upstream response through
+    untouched while timestamping the first one."""
     chunks: list[dict[str, Any]] = []
     try:
-        async with client.stream(
-            "POST", f"{UPSTREAM}/v1/chat/completions", content=body, headers=headers
-        ) as resp:
-            call.http_status = resp.status_code
-            if resp.is_error:
-                call.error = f"upstream HTTP {resp.status_code}"
-            async for line in resp.aiter_lines():
-                if run.ended:
-                    # A closed run's agent is gone or being stopped (a load
-                    # test's filler, a timed-out Hermes). Dropping the upstream
-                    # stream makes vLLM abort the request and free its batch slot.
-                    call.error = "run_ended: stream cut"
-                    run.refused_after_end += 1
-                    break
-                if line.startswith("data: "):
-                    blob = line[6:].strip()
-                    if blob and blob != "[DONE]":
-                        if call.ttft_ms is None:
-                            call.ttft_ms = monotonic_ms() - started
-                        try:
-                            chunks.append(json.loads(blob))
-                        except json.JSONDecodeError:
-                            pass
-                yield (line + "\n\n").encode() if line else b"\n"
+        call.http_status = resp.status_code
+        async for line in resp.aiter_lines():
+            if run.ended:
+                # A closed run's agent is gone or being stopped (a load
+                # test's filler, a timed-out Hermes). Dropping the upstream
+                # stream makes vLLM abort the request and free its batch slot.
+                call.error = "run_ended: stream cut"
+                run.refused_after_end += 1
+                break
+            if line.startswith("data: "):
+                blob = line[6:].strip()
+                if blob and blob != "[DONE]":
+                    if call.ttft_ms is None:
+                        call.ttft_ms = monotonic_ms() - started
+                    try:
+                        chunks.append(json.loads(blob))
+                    except json.JSONDecodeError:
+                        pass
+            yield (line + "\n\n").encode() if line else b"\n"
     except Exception as exc:
         call.error = f"{type(exc).__name__}: {exc}"
         raise
@@ -379,6 +406,7 @@ async def _stream(
         merged = _merge_chunks(chunks)
         _describe_response(call, merged)
         _finish(call, merged, run, writer)
+        await resp.aclose()
 
 
 def _describe_request(call: LlmCallRecord, payload: dict[str, Any], run: RunState) -> None:

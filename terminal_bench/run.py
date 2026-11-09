@@ -208,6 +208,15 @@ def main(argv=None):
         if 'terminal-bench-relay' not in policy.stdout:
             raise SystemExit(f'Sandbox {sandbox} lacks the relay egress rule: nemohermes {sandbox} policy add '
                              '--from-file terminal_bench/configs/policies/terminal-bench-relay.yaml --yes')
+        # Every trial binds the logging proxy under this job's session. A run left open by a
+        # killed job, or another job's session lock (held 10 min after its last bind), would
+        # refuse every trial with 409, so check first and release the lock when done.
+        control = cell['base_url'].rsplit('/v1',1)[0] + '/control'
+        with httpx.Client(timeout=10,trust_env=False) as client:
+            health = client.get(control + '/health').json()
+        if health.get('active_runs') or health.get('inflight'):
+            raise SystemExit(f'Proxy has an open run ({health.get("run_id")}, out_dir {health.get("out_dir")}). '
+                             f'End it first: curl -X POST {control}/end -d \'{{"run_id":"<id>"}}\'')
     from harbor.job import Job
 
     async def execute():
@@ -216,7 +225,15 @@ def main(argv=None):
         plan_path.write_text(json.dumps(plan,indent=2))
         return await instance.run()
 
-    asyncio.run(execute())
+    try:
+        asyncio.run(execute())
+    finally:
+        if args.agent == 'nemoclaw-hermes':
+            try:
+                with httpx.Client(timeout=10,trust_env=False) as client:
+                    client.post(control + '/release', json={'session': f'terminal-bench-{plan["job_name"]}'})
+            except Exception as exc:
+                print(f'Could not release the proxy session: {exc}', file=sys.stderr)
     print('Raw job:', TB / 'output/jobs' / plan['job_name'])
     return 0
 

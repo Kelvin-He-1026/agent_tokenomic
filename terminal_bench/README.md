@@ -186,8 +186,9 @@ Hermes 按原样运行在 NemoClaw 沙箱 `gaia-hermes` 内，与 GAIA 的 Herme
 profile 快照（每个 trial 恢复一份新的 `tb` 副本）、同一模型路由（沙箱记录的
 `host.openshell.internal:8000` = 172.18.0.1:8000 日志代理 → 127.0.0.1:8002 vLLM，
 `nemoclaw_hermes/configs/gaia_hermes_qwen_tp2_think_low.yaml`，thinking on / low）。
-代理用 X-Run-Id 把调用绑定到 trial，并强制 200 次调用、16,384 tokens/次、262,144 tokens/trial、
-1 小时；`agent.max_turns` 设为 199。
+代理用 X-Run-Id 把调用绑定到 trial，并强制 200 次调用、32,768 tokens/次、524,288 tokens/trial、
+1 小时；`agent.max_turns` 设为 199。输出上限是 ReAct 的两倍：第一次 pilot 中 16,384 常被 thinking
+用完，Hermes 丢弃被截断的 thinking 并关闭 thinking 重试，14 个 trial 中 8 个因此放弃。
 
 不同之处只有工具执行的位置。profile 副本把 `terminal.backend` 改为 `ssh`，指向每个 trial 的中继：
 

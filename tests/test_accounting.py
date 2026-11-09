@@ -37,6 +37,9 @@ class ProxyBudgetTests(unittest.IsolatedAsyncioTestCase):
             data = {"choices": [{"message": {"content": "2250"}, "finish_reason": "stop"}]}
             if not self.omit_usage:
                 data["usage"] = usage
+            if self.http_status >= 400:
+                return httpx.Response(self.http_status, json={"error": {
+                    "message": "maximum context length exceeded", "type": "BadRequestError", "code": 400}})
             if payload.get("stream"):
                 events = [{"choices": [{"delta": {"content": "2250"}, "finish_reason": "stop"}]}]
                 if not self.omit_usage:
@@ -132,6 +135,20 @@ class ProxyBudgetTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.rows()), 1)
         self.assertIn("ReadError", self.rows()[0]["error"])
         self.assertEqual((await self.client.get("/control/pending")).json()["inflight"], 0)
+
+    async def test_streamed_upstream_error_keeps_its_status_and_message(self):
+        # vLLM rejects prompt + output cap over the context with a 400 before streaming.
+        await self.bind(calls=3)
+        self.http_status = 400
+        response = await self.generate(stream=True)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("maximum context length", response.json()["error"]["message"])
+        row = self.rows()[0]
+        self.assertEqual((row["http_status"], row["error"]), (400, "upstream HTTP 400"))
+        state = (await self.client.get("/control/pending")).json()
+        self.assertEqual((state["inflight"], state["termination_reason"], state["upstream_errors"]), (0, "", 1))
+        self.http_status = 200
+        self.assertEqual((await self.generate(stream=True)).status_code, 200)
 
     async def test_missing_usage_is_explicit_and_blocks_further_unaccounted_generation(self):
         await self.bind(calls=10)
